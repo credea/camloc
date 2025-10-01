@@ -67,21 +67,26 @@
 
     startCamera();
 
-    document.getElementById("btnAbsen").addEventListener("click", () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    // pasang listener setelah DOM siap
+    window.addEventListener("DOMContentLoaded", () => {
+      const btn = document.getElementById("btnAbsen");
+      btn.addEventListener("click", () => {
+        console.log("✅ Tombol absen diklik");
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      const imageData = canvas.toDataURL("image/jpeg", 0.8);
+        const imageData = canvas.toDataURL("image/jpeg", 0.8);
 
-      tg.sendData(JSON.stringify({
-        type: "absen",
-        photo: imageData
-      }));
+        tg.sendData(JSON.stringify({
+          type: "absen",
+          photo: imageData
+        }));
 
-      status.innerText = "📤 Foto absensi dikirim ke bot...";
+        status.innerText = "📤 Foto absensi dikirim ke bot...";
+      });
     });
   </script>
 </body>
