@@ -1,0 +1,106 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Camera + Location WebApp</title>
+</head>
+<body>
+  <h3>📷 Ambil Foto + Lokasi</h3>
+  <video id="video" autoplay playsinline style="width:100%;max-width:360px"></video>
+  <canvas id="canvas" style="display:none;"></canvas>
+  <div style="margin-top:8px">
+    <button id="snap">📸 Ambil Foto & Kirim</button>
+    <button id="loc-only">📍 Ambil Lokasi Saja</button>
+  </div>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+
+    // akses kamera
+    async function startCamera(){
+      try{
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        video.srcObject = stream;
+      }catch(err){
+        alert('Gagal akses kamera: ' + err.message);
+      }
+    }
+    startCamera();
+
+    // helper untuk ambil lokasi sekali
+    function getLocationOnce(options = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }) {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) return reject(new Error('Geolocation tidak didukung'));
+        navigator.geolocation.getCurrentPosition(
+          pos => resolve(pos),
+          err => reject(err),
+          options
+        );
+      });
+    }
+
+    document.getElementById('snap').addEventListener('click', async () => {
+      try{
+        // ambil foto
+        const ctx = canvas.getContext('2d');
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const photoDataUrl = canvas.toDataURL('image/jpeg', 0.8); // base64
+
+        // ambil lokasi (user akan diminta izin)
+        let location = null;
+        try{
+          const pos = await getLocationOnce({ enableHighAccuracy: true, timeout: 10000 });
+          location = {
+            lat: pos.coords.latitude,
+            lon: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+            timestamp: pos.timestamp
+          };
+        }catch(locErr){
+          // jika user tolak atau timeout, kirim tanpa lokasi atau beri tahu user
+          console.warn('Lokasi gagal:', locErr);
+        }
+
+        // kirim data ke bot (web_app_data)
+        const payload = {
+          type: 'camera_with_location',
+          photo: photoDataUrl, // base64
+          location
+        };
+        tg.sendData(JSON.stringify(payload));
+        tg.close();
+      }catch(e){
+        alert('Gagal: ' + e.message);
+      }
+    });
+
+    // contoh tombol lokasi saja
+    document.getElementById('loc-only').addEventListener('click', async () => {
+      try{
+        const pos = await getLocationOnce();
+        const payload = {
+          type: 'location_only',
+          location: {
+            lat: pos.coords.latitude,
+            lon: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+            timestamp: pos.timestamp
+          }
+        };
+        tg.sendData(JSON.stringify(payload));
+        tg.close();
+      }catch(e){
+        alert('Gagal ambil lokasi: ' + (e.message || e.code));
+      }
+    });
+  </script>
+</body>
+</html>
