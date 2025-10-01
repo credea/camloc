@@ -11,26 +11,31 @@
       margin: 0;
       padding: 1rem;
       background: #f5f5f5;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
     }
     video {
       width: 100%;
-      max-width: 320px;   /* batasi supaya tidak kebesaran */
+      max-width: 320px;
+      height: 240px;         /* paksa tinggi */
+      object-fit: cover;     /* crop biar rapi */
       border-radius: 10px;
       background: #000;
     }
     button {
-      display: block;
-      margin: 1rem auto;
+      margin-top: 1rem;
       padding: 0.8rem 1.2rem;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       border: none;
       border-radius: 8px;
       background: #28a745;
       color: white;
       cursor: pointer;
-    }
-    button:active {
-      background: #218838;
+      z-index: 10;           /* pastikan di atas */
+      position: relative;
     }
     #status {
       margin-top: 0.5rem;
@@ -39,18 +44,19 @@
   </style>
 </head>
 <body>
-  <h3>📷 Absensi dengan Foto</h3>
+  <h3>📷 Absensi</h3>
   <video id="video" autoplay playsinline muted></video>
-  <p id="status">⏳ Loading kamera...</p>
   <button id="btnAbsen">✅ Absen</button>
+  <p id="status">⏳ Mengaktifkan kamera...</p>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
     const tg = window.Telegram.WebApp;
-    tg.expand();
+    tg.expand(); // biar webapp bisa penuh tapi controllable
 
     const video = document.getElementById("video");
     const status = document.getElementById("status");
+    const btn = document.getElementById("btnAbsen");
 
     async function startCamera() {
       try {
@@ -61,13 +67,13 @@
         await video.play();
         status.innerText = "✅ Kamera aktif";
       } catch (err) {
-        status.innerText = "❌ Gagal akses kamera: " + err.message;
+        status.innerText = "❌ Tidak bisa buka kamera: " + err.message;
       }
     }
 
     startCamera();
 
-    document.getElementById("btnAbsen").addEventListener("click", () => {
+    btn.addEventListener("click", () => {
       const canvas = document.createElement("canvas");
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
@@ -81,7 +87,7 @@
         photo: imageData
       }));
 
-      status.innerText = "📤 Foto absensi dikirim ke bot...";
+      status.innerText = "📤 Foto dikirim ke bot...";
     });
   </script>
 </body>
