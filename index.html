@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="referrer" content="no-referrer"/>
 <title>Camera + Location WebApp</title>
 </head>
 <body>
@@ -25,7 +26,7 @@
     // akses kamera
     async function startCamera(){
       try{
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         video.srcObject = stream;
       }catch(err){
         alert('Gagal akses kamera: ' + err.message);
