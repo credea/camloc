@@ -3,56 +3,34 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Absensi Kamera</title>
+  <title>Test Kamera</title>
 </head>
 <body>
-  <h3>📷 Absensi via Telegram WebApp</h3>
+  <h3>📷 Test Kamera Telegram WebApp</h3>
   <video id="video" autoplay playsinline muted
-    style="width:100%;max-width:360px;height:240px;object-fit:cover;border:1px solid #ccc;background:#000;"></video>
-  <p id="status">⏳ Loading kamera...</p>
+    style="width:100%;max-width:360px;border:1px solid #ccc;background:#000;"></video>
+  <p id="status">⏳ Loading...</p>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    const video = document.getElementById("video");
-    const status = document.getElementById("status");
-
-    // tampilkan main button
-    tg.MainButton.setText("✅ Absen Sekarang");
-    tg.MainButton.show();
-
     async function startCamera(){
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        const video = document.getElementById("video");
         video.srcObject = stream;
         await video.play();
-        status.innerText = "✅ Kamera aktif";
+        document.getElementById("status").innerText = "✅ Kamera berhasil diakses";
+        console.log("Stream tracks:", stream.getTracks());
       } catch(err) {
-        status.innerText = "❌ Kamera gagal: " + err.message;
+        document.getElementById("status").innerText = "❌ Gagal akses kamera: " + err.name + " - " + err.message;
+        console.error(err);
       }
     }
 
     startCamera();
-
-    // event klik MainButton
-    tg.MainButton.onClick(() => {
-      const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      const imageData = canvas.toDataURL("image/jpeg", 0.8);
-
-      tg.sendData(JSON.stringify({
-        type: "absen",
-        photo: imageData
-      }));
-
-      status.innerText = "📤 Foto dikirim ke bot...";
-    });
   </script>
 </body>
 </html>
