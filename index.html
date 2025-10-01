@@ -3,34 +3,86 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Test Kamera</title>
+  <title>Absensi Kamera</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 1rem;
+      background: #f5f5f5;
+    }
+    video {
+      width: 100%;
+      max-width: 320px;   /* batasi supaya tidak kebesaran */
+      border-radius: 10px;
+      background: #000;
+    }
+    button {
+      display: block;
+      margin: 1rem auto;
+      padding: 0.8rem 1.2rem;
+      font-size: 1.2rem;
+      border: none;
+      border-radius: 8px;
+      background: #28a745;
+      color: white;
+      cursor: pointer;
+    }
+    button:active {
+      background: #218838;
+    }
+    #status {
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+    }
+  </style>
 </head>
 <body>
-  <h3>📷 Test Kamera Telegram WebApp</h3>
-  <video id="video" autoplay playsinline muted
-    style="width:100%;max-width:360px;border:1px solid #ccc;background:#000;"></video>
-  <p id="status">⏳ Loading...</p>
+  <h3>📷 Absensi dengan Foto</h3>
+  <video id="video" autoplay playsinline muted></video>
+  <p id="status">⏳ Loading kamera...</p>
+  <button id="btnAbsen">✅ Absen</button>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    async function startCamera(){
+    const video = document.getElementById("video");
+    const status = document.getElementById("status");
+
+    async function startCamera() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-        const video = document.getElementById("video");
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user" }
+        });
         video.srcObject = stream;
         await video.play();
-        document.getElementById("status").innerText = "✅ Kamera berhasil diakses";
-        console.log("Stream tracks:", stream.getTracks());
-      } catch(err) {
-        document.getElementById("status").innerText = "❌ Gagal akses kamera: " + err.name + " - " + err.message;
-        console.error(err);
+        status.innerText = "✅ Kamera aktif";
+      } catch (err) {
+        status.innerText = "❌ Gagal akses kamera: " + err.message;
       }
     }
 
     startCamera();
+
+    document.getElementById("btnAbsen").addEventListener("click", () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const imageData = canvas.toDataURL("image/jpeg", 0.8);
+
+      tg.sendData(JSON.stringify({
+        type: "absen",
+        photo: imageData
+      }));
+
+      status.innerText = "📤 Foto absensi dikirim ke bot...";
+    });
   </script>
 </body>
 </html>
