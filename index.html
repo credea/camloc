@@ -14,23 +14,9 @@
     }
     video {
       width: 100%;
-      max-width: 320px;   /* batasi supaya tidak kebesaran */
+      max-width: 320px;
       border-radius: 10px;
       background: #000;
-    }
-    button {
-      display: block;
-      margin: 1rem auto;
-      padding: 0.8rem 1.2rem;
-      font-size: 1.2rem;
-      border: none;
-      border-radius: 8px;
-      background: #28a745;
-      color: white;
-      cursor: pointer;
-    }
-    button:active {
-      background: #218838;
     }
     #status {
       margin-top: 0.5rem;
@@ -42,7 +28,6 @@
   <h3>📷 Absensi dengan Foto</h3>
   <video id="video" autoplay playsinline muted></video>
   <p id="status">⏳ Loading kamera...</p>
-  <button id="btnAbsen">✅ Absen</button>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
@@ -67,26 +52,27 @@
 
     startCamera();
 
-    // pasang listener setelah DOM siap
-    window.addEventListener("DOMContentLoaded", () => {
-      const btn = document.getElementById("btnAbsen");
-      btn.addEventListener("click", () => {
-        console.log("✅ Tombol absen diklik");
-        const canvas = document.createElement("canvas");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    // --- pakai MainButton Telegram ---
+    tg.MainButton.setText("✅ Absen");
+    tg.MainButton.show();
 
-        const imageData = canvas.toDataURL("image/jpeg", 0.8);
+    tg.MainButton.onClick(() => {
+      console.log("MainButton diklik!");
 
-        tg.sendData(JSON.stringify({
-          type: "absen",
-          photo: imageData
-        }));
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        status.innerText = "📤 Foto absensi dikirim ke bot...";
-      });
+      const imageData = canvas.toDataURL("image/jpeg", 0.8);
+
+      tg.sendData(JSON.stringify({
+        type: "absen",
+        photo: imageData
+      }));
+
+      status.innerText = "📤 Foto absensi dikirim ke bot...";
     });
   </script>
 </body>
