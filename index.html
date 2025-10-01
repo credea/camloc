@@ -4,76 +4,40 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Absensi Kamera</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      margin: 0;
-      padding: 1rem;
-      background: #f5f5f5;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-    }
-    video {
-      width: 100%;
-      max-width: 320px;
-      height: 240px;         /* paksa tinggi */
-      object-fit: cover;     /* crop biar rapi */
-      border-radius: 10px;
-      background: #000;
-    }
-    button {
-      margin-top: 1rem;
-      padding: 0.8rem 1.2rem;
-      font-size: 1.1rem;
-      border: none;
-      border-radius: 8px;
-      background: #28a745;
-      color: white;
-      cursor: pointer;
-      z-index: 10;           /* pastikan di atas */
-      position: relative;
-    }
-    #status {
-      margin-top: 0.5rem;
-      font-size: 0.9rem;
-    }
-  </style>
 </head>
 <body>
-  <h3>📷 Absensi</h3>
-  <video id="video" autoplay playsinline muted></video>
-  <button id="btnAbsen">✅ Absen</button>
-  <p id="status">⏳ Mengaktifkan kamera...</p>
+  <h3>📷 Absensi via Telegram WebApp</h3>
+  <video id="video" autoplay playsinline muted
+    style="width:100%;max-width:360px;height:240px;object-fit:cover;border:1px solid #ccc;background:#000;"></video>
+  <p id="status">⏳ Loading kamera...</p>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
     const tg = window.Telegram.WebApp;
-    tg.expand(); // biar webapp bisa penuh tapi controllable
+    tg.expand();
 
     const video = document.getElementById("video");
     const status = document.getElementById("status");
-    const btn = document.getElementById("btnAbsen");
 
-    async function startCamera() {
+    // tampilkan main button
+    tg.MainButton.setText("✅ Absen Sekarang");
+    tg.MainButton.show();
+
+    async function startCamera(){
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user" }
-        });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
         video.srcObject = stream;
         await video.play();
         status.innerText = "✅ Kamera aktif";
-      } catch (err) {
-        status.innerText = "❌ Tidak bisa buka kamera: " + err.message;
+      } catch(err) {
+        status.innerText = "❌ Kamera gagal: " + err.message;
       }
     }
 
     startCamera();
 
-    btn.addEventListener("click", () => {
+    // event klik MainButton
+    tg.MainButton.onClick(() => {
       const canvas = document.createElement("canvas");
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
