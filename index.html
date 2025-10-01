@@ -3,11 +3,12 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Test Kamera Telegram WebApp</title>
+  <title>Test Kamera</title>
 </head>
 <body>
-  <h3>📷 Test Kamera di Telegram WebApp</h3>
-  <video id="video" autoplay playsinline style="width:100%;max-width:360px;border:1px solid #ccc;"></video>
+  <h3>📷 Test Kamera Telegram WebApp</h3>
+  <video id="video" autoplay playsinline muted
+    style="width:100%;max-width:360px;border:1px solid #ccc;background:#000;"></video>
   <p id="status">⏳ Loading...</p>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -17,11 +18,15 @@
 
     async function startCamera(){
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        document.getElementById("video").srcObject = stream;
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        const video = document.getElementById("video");
+        video.srcObject = stream;
+        await video.play();
         document.getElementById("status").innerText = "✅ Kamera berhasil diakses";
+        console.log("Stream tracks:", stream.getTracks());
       } catch(err) {
         document.getElementById("status").innerText = "❌ Gagal akses kamera: " + err.name + " - " + err.message;
+        console.error(err);
       }
     }
 
