@@ -3,108 +3,321 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>WebApp Test</title>
+  <title>Absensi Kamera</title>
   <style>
-    body {
-      text-align: center;
-      font-family: sans-serif;
-      padding: 2rem;
-      background: var(--tg-theme-bg-color, #fff);
-      color: var(--tg-theme-text-color, #000);
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
-    .status {
-      margin-top: 2rem;
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       padding: 1rem;
-      border-radius: 8px;
-      background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+    }
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 1.5rem;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-width: 400px;
+      width: 100%;
+    }
+    h3 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+    }
+    .video-container {
+      position: relative;
+      width: 100%;
+      border-radius: 15px;
+      overflow: hidden;
+      background: #000;
+      margin-bottom: 1rem;
+    }
+    video {
+      width: 100%;
+      display: block;
+      transform: scaleX(-1); /* Mirror effect for selfie */
+    }
+    canvas {
+      display: none;
+    }
+    #faceOverlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 200px;
+      height: 250px;
+      border: 3px solid #4CAF50;
+      border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+      pointer-events: none;
+      opacity: 0.7;
+    }
+    #faceOverlay.detecting {
+      border-color: #FFC107;
+      animation: pulse 1s infinite;
+    }
+    #faceOverlay.detected {
+      border-color: #4CAF50;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+    #status {
+      text-align: center;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    #status.loading {
+      background: #FFF3CD;
+      color: #856404;
+    }
+    #status.ready {
+      background: #D4EDDA;
+      color: #155724;
+    }
+    #status.error {
+      background: #F8D7DA;
+      color: #721C24;
+    }
+    #status.processing {
+      background: #D1ECF1;
+      color: #0C5460;
     }
     .info {
-      font-size: 0.9rem;
-      color: var(--tg-theme-hint-color, #999);
-      margin-top: 1rem;
+      background: #E7F3FF;
+      padding: 1rem;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+      font-size: 0.85rem;
+      color: #004085;
+    }
+    .info ul {
+      margin-left: 1.2rem;
+      margin-top: 0.5rem;
+    }
+    .info li {
+      margin-bottom: 0.3rem;
     }
   </style>
 </head>
 <body>
-  <h3>🔘 Test WebApp</h3>
-  <p>Klik tombol "Kirim Pesan" di bawah layar 👇</p>
-  
-  <div class="status" id="status">
-    ⏳ Menunggu aksi...
+  <div class="container">
+    <h3>📷 Absen ${type === 'masuk' ? 'Masuk' : 'Pulang'}</h3>
+    
+    <div class="video-container">
+      <video id="video" autoplay playsinline muted></video>
+      <div id="faceOverlay"></div>
+    </div>
+    
+    <canvas id="canvas"></canvas>
+    
+    <div id="status" class="loading">⏳ Loading kamera...</div>
+    
+    <div class="info">
+      <strong>📌 Petunjuk:</strong>
+      <ul>
+        <li>Posisikan wajah Anda dalam frame</li>
+        <li>Pastikan wajah terlihat jelas</li>
+        <li>Tekan tombol "Absen" saat siap</li>
+        <li>Lokasi GPS akan otomatis diambil</li>
+      </ul>
+    </div>
   </div>
-  
-  <div class="info" id="info"></div>
 
-  <script src="https://telegram.org/js/telegram-web-app.js?59"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface"></script>
+  
   <script>
     const tg = window.Telegram.WebApp;
-    const statusEl = document.getElementById('status');
-    const infoEl = document.getElementById('info');
-    
-    // Inisialisasi WebApp
-    tg.ready();
-    tg.expand(); // Buka fullscreen
-    
-    // Tampilkan info user (opsional, untuk debugging)
-    if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-      const user = tg.initDataUnsafe.user;
-      infoEl.innerHTML = `
-        👤 User: ${user.first_name || 'Unknown'}<br>
-        🆔 ID: ${user.id || 'N/A'}
-      `;
+    tg.expand();
+
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const status = document.getElementById("status");
+    const faceOverlay = document.getElementById("faceOverlay");
+
+    let model = null;
+    let faceDetected = false;
+    let userLocation = null;
+
+    // Inisialisasi kamera
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            facingMode: "user",
+            width: { ideal: 640 },
+            height: { ideal: 480 }
+          }
+        });
+        video.srcObject = stream;
+        await video.play();
+        
+        status.className = "ready";
+        status.innerText = "✅ Kamera aktif - Loading AI face detection...";
+        
+        // Load BlazeFace model
+        await loadFaceDetection();
+        
+      } catch (err) {
+        status.className = "error";
+        status.innerText = "❌ Gagal akses kamera: " + err.message;
+      }
     }
-    
-    // ========================================
-    // Setup Main Button (tombol bawaan Telegram)
-    // ========================================
-    tg.MainButton.setText("✅ Kirim Pesan");
-    tg.MainButton.color = "#4CAF50"; // Warna hijau
-    tg.MainButton.textColor = "#FFFFFF"; // Teks putih
-    tg.MainButton.show(); // Tampilkan tombol
-    
-    // ========================================
-    // Event ketika tombol diklik
-    // ========================================
-    tg.MainButton.onClick(() => {
-      console.log("MainButton diklik!");
+
+    // Load face detection model
+    async function loadFaceDetection() {
+      try {
+        model = await blazeface.load();
+        status.className = "ready";
+        status.innerText = "✅ Siap - Posisikan wajah Anda";
+        
+        // Mulai deteksi wajah
+        detectFace();
+        
+      } catch (err) {
+        console.error("Error loading model:", err);
+        status.className = "ready";
+        status.innerText = "✅ Siap (tanpa face detection)";
+      }
+    }
+
+    // Deteksi wajah real-time
+    async function detectFace() {
+      if (!model) return;
       
-      // Update status
-      statusEl.innerHTML = "📤 Mengirim data...";
-      tg.MainButton.showProgress(); // Tampilkan loading
+      const predictions = await model.estimateFaces(video, false);
       
-      // Simulasi delay (hapus ini jika tidak perlu)
+      if (predictions.length > 0) {
+        faceDetected = true;
+        faceOverlay.className = "detected";
+      } else {
+        faceDetected = false;
+        faceOverlay.className = "detecting";
+      }
+      
+      // Loop detection
+      requestAnimationFrame(detectFace);
+    }
+
+    // Get lokasi GPS
+    async function getLocation() {
+      return new Promise((resolve) => {
+        if (!navigator.geolocation) {
+          resolve(null);
+          return;
+        }
+        
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            resolve({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              accuracy: position.coords.accuracy
+            });
+          },
+          (error) => {
+            console.error("Geolocation error:", error);
+            resolve(null);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+          }
+        );
+      });
+    }
+
+    // Ambil foto dan kirim
+    async function captureAndSend() {
+      // Cek face detection (opsional - tidak wajib)
+      if (model && !faceDetected) {
+        tg.showAlert("⚠️ Wajah tidak terdeteksi. Pastikan wajah Anda terlihat jelas.");
+        return;
+      }
+
+      status.className = "processing";
+      status.innerText = "📸 Mengambil foto...";
+
+      // Set canvas size
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      // Draw video frame to canvas (mirror back to normal)
+      ctx.save();
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+      ctx.restore();
+
+      // Get image data
+      const imageData = canvas.toDataURL("image/jpeg", 0.8);
+
+      status.innerText = "📍 Mengambil lokasi GPS...";
+
+      // Get location
+      const location = await getLocation();
+
+      status.innerText = "📤 Mengirim data...";
+
+      // Send data ke bot
+      tg.sendData(JSON.stringify({
+        type: "absen",
+        absenType: "${type}",
+        photo: imageData,
+        location: location,
+        timestamp: new Date().toISOString(),
+        faceDetected: faceDetected
+      }));
+
+      status.className = "ready";
+      status.innerText = "✅ Data terkirim! Menutup...";
+
+      // Close mini app
       setTimeout(() => {
-        // Data yang akan dikirim ke bot
-        const dataToSend = {
-          type: "test",
-          msg: "Halo dari WebApp 👋",
-          timestamp: new Date().toISOString(),
-          user_id: tg.initDataUnsafe?.user?.id || null
-        };
-        
-        // Kirim data ke bot (ini yang trigger fungsi webApp di Apps Script)
-        tg.sendData(JSON.stringify(dataToSend));
-        
-        // Update status
-        statusEl.innerHTML = "✅ Data terkirim!";
-        
-        // Tutup WebApp setelah 1 detik (opsional)
-        setTimeout(() => {
-          tg.close();
-        }, 1000);
-      }, 500);
+        tg.close();
+      }, 1000);
+    }
+
+    // Start camera
+    startCamera();
+
+    // Get location saat load
+    getLocation().then(loc => {
+      userLocation = loc;
     });
-    
-    // ========================================
-    // Handle tombol Back (jika user tap back)
-    // ========================================
-    tg.BackButton.onClick(() => {
-      tg.close();
+
+    // Setup MainButton
+    tg.MainButton.setText("✅ Absen ${type === 'masuk' ? 'Masuk' : 'Pulang'}");
+    tg.MainButton.show();
+    tg.MainButton.onClick(captureAndSend);
+
+    // Optional: Auto capture on blink detection (advanced)
+    let blinkCount = 0;
+    let lastBlinkTime = 0;
+
+    // Cleanup on close
+    window.addEventListener('beforeunload', () => {
+      if (video.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+      }
     });
-    
-    // Tampilkan tombol Back (opsional)
-    // tg.BackButton.show();
-    
   </script>
 </body>
 </html>
