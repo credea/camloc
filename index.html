@@ -84,6 +84,7 @@
 
     // Handle Absen
     document.getElementById("btnAbsen").addEventListener("click", () => {
+      tg.showAlert("Button clicked!");
       const canvas = document.createElement("canvas");
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
@@ -100,6 +101,8 @@
 
       status.innerText = "📤 Foto absensi dikirim ke bot...";
     });
+
+    tg.close();
   </script>
 </body>
 </html>
