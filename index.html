@@ -83,34 +83,34 @@
     startCamera();
 
     // Handle Absen
-document.getElementById("btnAbsen").addEventListener("click", () => {
-  tg.showAlert("Button clicked!");
+document.getElementById("btnAbsen").addEventListener("click", async () => {
+  tg.showAlert("📸 Mengambil foto...");
 
+  // Render ke canvas
   const canvas = document.createElement("canvas");
-
-  // Resize image
-  const maxW = 480;
-  const scale = maxW / video.videoWidth;
-
-  canvas.width = maxW;
-  canvas.height = video.videoHeight * scale;
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
 
   const ctx = canvas.getContext("2d");
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-  // Compress to < 50 KB
-  const imageData = canvas.toDataURL("image/jpeg", 0.5);
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.7));
 
-  tg.sendData(JSON.stringify({
-    type: "absen",
-    photo: imageData
-  }));
+  // Upload ke Apps Script
+  const form = new FormData();
+  form.append("photo", blob, "absen.jpg");
+  form.append("chat_id", tg.initDataUnsafe.user.id); // kirim chat id untuk bot
+  form.append("type", "absen");
 
-  status.innerText = "📤 Foto absensi dikirim ke bot...";
+  await fetch("https://script.google.com/macros/s/AKfycbzWz2uXM8NSSYIlsA8Qyxnu8BWWz2sQIQ2umUsqv0wlWnmJm13cB4Bydv22ctJXEknp/exec", {
+    method: "POST",
+    body: form
+  });
 
-  // Delay for safety
-  setTimeout(() => tg.close(), 200);
+  tg.showAlert("📤 Foto dikirim ke server!");
+  tg.close();
 });
+
   </script>
 </body>
 </html>
