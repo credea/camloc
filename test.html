@@ -13,7 +13,6 @@
     const tg = window.Telegram.WebApp;
     tg.ready();
     tg.expand();
-    //tg.showAlert("initData length = " + tg.initData.length);
 
     // tampilkan tombol bawaan Telegram
     tg.MainButton.setText("✅ Kirim Pesan");
@@ -24,7 +23,7 @@
       console.log("MainButton diklik!");
       tg.sendData("test ok");
       tg.showAlert("Tombol ditekan!");
-      setTimeout(() => tg.close(), 150);
+      setTimeout(() => tg.close(), 3000);
     });
     
   </script>
