@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mini App Camera</title>
+  <title>Camera Capture</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 
 <body>
 
-  <h3>Telegram Mini App Camera</h3>
+  <h3>Kamera</h3>
 
-  <video id="camera" autoplay playsinline></video>
+  <video id="video" autoplay playsinline muted style="width:100%;max-width:360px;background:#000;"></video>
   <br><br>
 
   <button id="captureBtn">Capture</button>
@@ -20,27 +20,33 @@
   <canvas id="canvas" style="display:none;"></canvas>
   <br><br>
 
-  <button id="sendBtn" style="display:none;">Send to Bot</button>
+  <button id="sendBtn" style="display:none;">Kirim ke Bot</button>
 
   <script>
-    const tg = Telegram.WebApp;
-    tg.expand();
+    Telegram.WebApp.expand();
 
-    const video = document.getElementById("camera");
+    const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
     const captureBtn = document.getElementById("captureBtn");
     const sendBtn = document.getElementById("sendBtn");
 
-    // Start camera
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then(stream => {
-        video.srcObject = stream;
-      })
-      .catch(err => {
-        alert("Camera blocked: " + err);
-      });
+    // 🔹 Nyalakan kamera belakang
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } }
+        });
 
-    // Capture image
+        video.srcObject = stream;
+        await video.play();
+      } catch (err) {
+        alert("Gagal akses kamera: " + err.message);
+      }
+    }
+
+    startCamera();
+
+    // 🔹 Capture foto dari video
     captureBtn.onclick = function () {
       const ctx = canvas.getContext("2d");
       canvas.width = video.videoWidth;
@@ -52,16 +58,16 @@
       sendBtn.style.display = "inline-block";
     };
 
-    // Send image to bot
+    // 🔹 Kirim ke Bot via WebApp Data
     sendBtn.onclick = function () {
       const base64 = canvas.toDataURL("image/jpeg");
 
-      tg.sendData(JSON.stringify({
+      Telegram.WebApp.sendData(JSON.stringify({
         type: "photo",
         image: base64
       }));
 
-      tg.close();
+      Telegram.WebApp.close();
     };
   </script>
 
