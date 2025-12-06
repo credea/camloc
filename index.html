@@ -57,47 +57,53 @@
   <button id="btnAbsen">✅ Absen</button>
 
   <script>
-    const tg = window.Telegram.WebApp;
-    tg.ready();
-    tg.expand();
+  const tg = window.Telegram.WebApp;
+  tg.ready();
+  tg.expand();
 
-    const video = document.getElementById("video");
-    const status = document.getElementById("status");
+  const video = document.getElementById("video");
+  const status = document.getElementById("status");
 
-    // Start Camera
-    async function startCamera() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user" }
-        });
+  async function startCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" }
+      });
 
-        video.srcObject = stream;
-        await video.play();
-
-        status.innerText = "✅ Kamera aktif";
-      } catch (err) {
-        status.innerText = "❌ Gagal akses kamera: " + err.message;
-      }
+      video.srcObject = stream;
+      await video.play();
+      status.innerText = "✅ Kamera aktif";
+    } catch (err) {
+      status.innerText = "❌ Gagal akses kamera: " + err.message;
     }
-
-    startCamera();
-
-    // Handle Absen
-    document.getElementById("btnAbsen").addEventListener("click", () => { 
-  try {
-      const canvas = document.createElement("canvas"); 
-      canvas.width = video.videoWidth; 
-      canvas.height = video.videoHeight; 
-      const ctx = canvas.getContext("2d"); 
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height); 
-      const imageData = canvas.toDataURL("image/jpeg", 0.8); 
-      tg.sendData(JSON.stringify({ type: "absen", photo: imageData })); 
-      status.innerText = "📤 Foto absensi dikirim ke bot..."; });
-      setTimeout(() => tg.close(), 1000);
-  } catch (err) {
-    tg.showAlert("❌ ERROR: " + err.message || err.toString());
   }
-});
-  </script>
+
+  startCamera();
+
+  document.getElementById("btnAbsen").addEventListener("click", () => {
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const imageData = canvas.toDataURL("image/jpeg", 0.8);
+
+      tg.sendData(JSON.stringify({
+        type: "absen",
+        photo: imageData
+      }));
+
+      status.innerText = "📤 Foto absensi dikirim ke bot...";
+
+      setTimeout(() => tg.close(), 800);
+
+    } catch (err) {
+      tg.showAlert("❌ ERROR: " + (err.message || err.toString()));
+    }
+  });
+</script>
 </body>
 </html>
