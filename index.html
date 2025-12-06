@@ -107,6 +107,7 @@ document.getElementById("btnAbsen").addEventListener("click", async () => {
       "https://script.google.com/macros/s/AKfycbzWz2uXM8NSSYIlsA8Qyxnu8BWWz2sQIQ2umUsqv0wlWnmJm13cB4Bydv22ctJXEknp/exec",
       {
         method: "POST",
+        mode: "no-cors",
         headers: {
           "Content-Type": "application/json"  // ← Apps Script butuh ini
         },
