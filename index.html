@@ -82,29 +82,58 @@
     
 document.getElementById("btnAbsen").addEventListener("click", async () => {
   try {
+    tg.showAlert("📸 Mengambil foto...");
+
+    // Buat canvas
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
+    if (!canvas.width || !canvas.height) {
+      tg.showAlert("❌ Video belum siap!");  
+      return;
+    }
+
     const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
+    // Konversi ke base64
     const base64 = canvas.toDataURL("image/jpeg", 0.8);
+    
+    tg.showAlert("📤 Mengirim ke server...");
 
-    await fetch("https://script.google.com/macros/s/AKfycbzWz2uXM8NSSYIlsA8Qyxnu8BWWz2sQIQ2umUsqv0wlWnmJm13cB4Bydv22ctJXEknp/exec", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: tg.initDataUnsafe.user.id,
-        photo: base64
-      })
+    // POST ke Apps Script
+    const response = await fetch(
+      "https://script.google.com/macros/s/AKfycbzWz2uXM8NSSYIlsA8Qyxnu8BWWz2sQIQ2umUsqv0wlWnmJm13cB4Bydv22ctJXEknp/exec",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: tg.initDataUnsafe.user.id,
+          photo: base64
+        })
+      }
+    ).catch(fetchErr => {
+      tg.showAlert("❌ Fetch Error: " + fetchErr);
+      console.error(fetchErr);
+      return;
     });
 
+    if (!response) return;
+
+    const text = await response.text();
+
+    tg.showAlert("📬 Response Server:\n" + text);
+    console.log("Server Response:", text);
+
+    // Beri Telegram "sendData kecil" untuk mencegah error
     tg.sendData("ok");
+
     setTimeout(() => tg.close(), 600);
 
   } catch (err) {
-    tg.showAlert("❌ ERROR: " + err.message);
+    tg.showAlert("❌ ERROR: " + (err.message || err));
+    console.error("Final ERROR:", err);
   }
 });
 </script>
