@@ -22,9 +22,9 @@
     // event klik tombol
     tg.MainButton.onClick(() => {
       console.log("MainButton diklik!");
-      tg.sendData(JSON.stringify({ type: "test", msg: "Halo dari WebApp 👋" }));
+      tg.sendData("test ok");
       tg.showAlert("Tombol ditekan!");
-      //setTimeout(() => tg.close(), 150);
+      setTimeout(() => tg.close(), 150);
     });
     
   </script>
