@@ -23,7 +23,6 @@
         try {
           tg.sendData("OK");
           tg.showAlert("✅ Data dikirim ke bot!");
-          infoEl.innerHTML += `<p style="color:green;">📤 Data terkirim</p>`;
         } catch (error) {
           tg.showAlert("❌ Error: " + error.message);
         }
