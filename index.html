@@ -80,30 +80,35 @@
 
   startCamera();
 
-  document.getElementById("btnAbsen").addEventListener("click", () => {
-    try {
-      const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+document.getElementById("btnAbsen").addEventListener("click", async () => {
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
 
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      const imageData = canvas.toDataURL("image/jpeg", 0.8);
+    const blob = await new Promise(resolve =>
+      canvas.toBlob(resolve, "image/jpeg", 0.8)
+    );
 
-      tg.sendData(JSON.stringify({
-        type: "absen",
-        photo: imageData
-      }));
+    const form = new FormData();
+    form.append("photo", blob, "absen.jpg");
+    form.append("chat_id", tg.initDataUnsafe.user.id);
 
-      status.innerText = "📤 Foto absensi dikirim ke bot...";
+    await fetch("https://script.google.com/macros/s/AKfycbzWz2uXM8NSSYIlsA8Qyxnu8BWWz2sQIQ2umUsqv0wlWnmJm13cB4Bydv22ctJXEknp/exec", {
+      method: "POST",
+      body: form
+    });
 
-      setTimeout(() => tg.close(), 800);
+    tg.showAlert("📤 Foto dikirim ke server!");
+    tg.close();
 
-    } catch (err) {
-      tg.showAlert("❌ ERROR: " + (err.message || err.toString()));
-    }
-  });
+  } catch (err) {
+    tg.showAlert("❌ ERROR: " + err.message);
+  }
+});
 </script>
 </body>
 </html>
