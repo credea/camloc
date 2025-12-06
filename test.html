@@ -15,19 +15,32 @@
 
   <script>
     const tg = Telegram.WebApp;
+    tg.ready();
     tg.expand();
 
-    document.getElementById("btnSend").addEventListener("click", () => {
-      tg.showAlert("Tombol ditekan!");
+        // tampilkan tombol bawaan Telegram
+    tg.MainButton.setText("✅ Kirim Pesan");
+    tg.MainButton.show();
+
+    // event klik tombol
+    tg.MainButton.onClick(() => {
+      console.log("MainButton diklik!");
+      tg.sendData(JSON.stringify({ type: "test", msg: "Halo dari WebApp 👋" }));
+    });
+    
+    //document.getElementById("btnSend").addEventListener("click", () => {
+    //  tg.showAlert("Tombol ditekan!");
       
-      tg.sendData(JSON.stringify({
-        type: "test",
-        message: "ok"
-      }));
+    //  tg.sendData(JSON.stringify({
+     //   type: "test",
+     //   message: "ok"
+     // }));
 
       // Tutup WebApp agar bot segera menerima update
-      setTimeout(() => tg.close(), 150);
-    });
+      //setTimeout(() => tg.close(), 150);
+    //});
+
+    setTimeout(() => tg.close(), 150);
   </script>
 
 </body>
