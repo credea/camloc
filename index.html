@@ -83,6 +83,7 @@
     startCamera();
 
 document.getElementById("btnAbsen").addEventListener("click", () => {
+  tg.showAlert("📸 Mengambil foto...");
   const canvas = document.createElement("canvas");
   canvas.width = 640; // Resolusi lebih kecil
   canvas.height = 480;
@@ -103,6 +104,8 @@ document.getElementById("btnAbsen").addEventListener("click", () => {
     reader.readAsDataURL(blob);
   }, 'image/jpeg', 0.7); // Kualitas 70%
 });
+
+    tg.close()
 
   </script>
 </body>
