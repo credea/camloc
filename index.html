@@ -125,12 +125,10 @@ document.getElementById("btnAbsen").addEventListener("click", async () => {
 
   } catch (err) {
     tg.showAlert("❌ Error: " + err);
-    console.error(err);
   }
 
   } catch (err) {
     tg.showAlert("❌ ERROR: " + (err.message || err));
-    console.error("Final ERROR:", err);
   }
 });
 </script>
