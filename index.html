@@ -103,7 +103,8 @@ document.getElementById("btnAbsen").addEventListener("click", async () => {
     });
 
     tg.showAlert("📤 Foto dikirim ke server!");
-    tg.close();
+    tg.sendData("ok");
+    setTimeout(() => tg.close(), 1000);
 
   } catch (err) {
     tg.showAlert("❌ ERROR: " + err.message);
