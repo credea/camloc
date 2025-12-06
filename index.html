@@ -120,23 +120,13 @@ document.getElementById("btnAbsen").addEventListener("click", async () => {
     const result = await response.text();
     console.log("Apps Script Response:", result);
     tg.showAlert("📤 Foto berhasil dikirim!");
+    //tg.sendData("ok");
+    setTimeout(() => tg.close(), 600);
 
   } catch (err) {
     tg.showAlert("❌ Error: " + err);
     console.error(err);
   }
-
-    if (!response) return;
-
-    const text = await response.text();
-
-    tg.showAlert("📬 Response Server:\n" + text);
-    console.log("Server Response:", text);
-
-    // Beri Telegram "sendData kecil" untuk mencegah error
-    tg.sendData("ok");
-
-    setTimeout(() => tg.close(), 600);
 
   } catch (err) {
     tg.showAlert("❌ ERROR: " + (err.message || err));
