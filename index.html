@@ -83,24 +83,34 @@
     startCamera();
 
     // Handle Absen
-    document.getElementById("btnAbsen").addEventListener("click", () => {
-      tg.showAlert("Button clicked!");
-      const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+document.getElementById("btnAbsen").addEventListener("click", () => {
+  tg.showAlert("Button clicked!");
 
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const canvas = document.createElement("canvas");
 
-      const imageData = canvas.toDataURL("image/jpeg", 0.8);
+  // Resize image
+  const maxW = 480;
+  const scale = maxW / video.videoWidth;
 
-      tg.sendData(JSON.stringify({
-        type: "absen",
-        photo: imageData
-      }));
+  canvas.width = maxW;
+  canvas.height = video.videoHeight * scale;
 
-      status.innerText = "📤 Foto absensi dikirim ke bot...";
-    });
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  // Compress to < 50 KB
+  const imageData = canvas.toDataURL("image/jpeg", 0.5);
+
+  tg.sendData(JSON.stringify({
+    type: "absen",
+    photo: imageData
+  }));
+
+  status.innerText = "📤 Foto absensi dikirim ke bot...";
+
+  // Delay for safety
+  setTimeout(() => tg.close(), 200);
+});
   </script>
 </body>
 </html>
