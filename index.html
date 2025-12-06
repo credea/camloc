@@ -4,6 +4,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <!-- Script Telegram Mini App -->
+  <script src="https://telegram.org/js/telegram-web-app.js?59"></script>
   <title>Absensi Kamera</title>
 
   <style>
@@ -54,11 +56,8 @@
 
   <button id="btnAbsen">✅ Absen</button>
 
-  <!-- Script Telegram Mini App -->
-  <script src="https://telegram.org/js/telegram-web-app.js?59"></script>
-
   <script>
-    const tg = Telegram.WebApp;
+    const tg = window.Telegram.WebApp;
     tg.expand();
 
     const video = document.getElementById("video");
