@@ -95,28 +95,24 @@
         status.innerText = "📤 Mengirim ke server...";
 
         // POST ke Apps Script
-        try {
-          const response = fetch(
-            "https://script.google.com/macros/s/AKfycbzWz2uXM8NSSYIlsA8Qyxnu8BWWz2sQIQ2umUsqv0wlWnmJm13cB4Bydv22ctJXEknp/exec",
-            {
-              method: "POST",
-              mode: "no-cors",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                chat_id: tg.initDataUnsafe.user.id,
-                photo: base64,
-              }),
-            }
-          );
+        fetch(
+          "https://script.google.com/macros/s/AKfycbzWz2uXM8NSSYIlsA8Qyxnu8BWWz2sQIQ2umUsqv0wlWnmJm13cB4Bydv22ctJXEknp/exec",
+          {
+            method: "POST",
+            mode: "no-cors",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              chat_id: tg.initDataUnsafe.user.id,
+              photo: base64,
+            }),
+          }
+        );
 
-          tg.showAlert("📤 Foto berhasil dikirim!");
-          tg.sendData("ok");
-          setTimeout(() => tg.close(), 600);
-        } catch (err) {
-          tg.showAlert("❌ Error: " + err);
-        }
+        tg.showAlert("📤 Foto sedang dikirim!");
+        tg.sendData("ok");
+        setTimeout(() => tg.close(), 1000);
       });
     </script>
   </body>
