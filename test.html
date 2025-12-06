@@ -4,15 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Test MiniApp SendData</title>
-  <script src="https://telegram.org/js/telegram-web-app.js?59"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 
 <body>
-
   <h3>Test WebApp SendData</h3>
-
-  <button id="btnSend">Kirim OK ke Bot</button>
-
   <script>
     const tg = Telegram.WebApp;
     tg.ready();
@@ -26,20 +22,10 @@
     tg.MainButton.onClick(() => {
       console.log("MainButton diklik!");
       tg.sendData(JSON.stringify({ type: "test", msg: "Halo dari WebApp 👋" }));
+      tg.showAlert("Tombol ditekan!");
       setTimeout(() => tg.close(), 150);
     });
     
-    //document.getElementById("btnSend").addEventListener("click", () => {
-    //  tg.showAlert("Tombol ditekan!");
-      
-    //  tg.sendData(JSON.stringify({
-     //   type: "test",
-     //   message: "ok"
-     // }));
-
-      // Tutup WebApp agar bot segera menerima update
-      //setTimeout(() => tg.close(), 150);
-    //});
   </script>
 
 </body>
