@@ -99,7 +99,7 @@ document.getElementById("btnAbsen").addEventListener("click", async () => {
     const base64 = canvas.toDataURL("image/jpeg", 0.8);
     
     status.innerText = "📤 Mengirim ke server...";
-    status.innerText = tg.initDataUnsafe.user.id;
+    status.innerText = tg.initDataUnsafe.user.id + base64?.substring(0, 30);
 
     // POST ke Apps Script
   try {
