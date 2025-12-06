@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Test MiniApp SendData</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js?59"></script>
 </head>
 
 <body>
@@ -13,9 +13,9 @@
     const tg = Telegram.WebApp;
     tg.ready();
     tg.expand();
-    tg.showAlert("initData length = " + tg.initData.length);
+    //tg.showAlert("initData length = " + tg.initData.length);
 
-        // tampilkan tombol bawaan Telegram
+    // tampilkan tombol bawaan Telegram
     tg.MainButton.setText("✅ Kirim Pesan");
     tg.MainButton.show();
 
@@ -24,7 +24,7 @@
       console.log("MainButton diklik!");
       tg.sendData(JSON.stringify({ type: "test", msg: "Halo dari WebApp 👋" }));
       tg.showAlert("Tombol ditekan!");
-      setTimeout(() => tg.close(), 150);
+      //setTimeout(() => tg.close(), 150);
     });
     
   </script>
