@@ -103,21 +103,29 @@ document.getElementById("btnAbsen").addEventListener("click", async () => {
     status.innerText = "📤 Mengirim ke server...";
 
     // POST ke Apps Script
+  try {
     const response = await fetch(
       "https://script.google.com/macros/s/AKfycbzWz2uXM8NSSYIlsA8Qyxnu8BWWz2sQIQ2umUsqv0wlWnmJm13cB4Bydv22ctJXEknp/exec",
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json"  // ← Apps Script butuh ini
+        },
         body: JSON.stringify({
-          chat_id: tg.initDataUnsafe.user.id,
-          photo: base64
+          chat_id: tg.initDataUnsafe.user.id, // sama seperti dummy test
+          photo: base64                       // sama seperti dummyBase64
         })
       }
-    ).catch(fetchErr => {
-      tg.showAlert("❌ Fetch Error: " + fetchErr);
-      console.error(fetchErr);
-      return;
-    });
+    );
+
+    const result = await response.text();
+    console.log("Apps Script Response:", result);
+    tg.showAlert("📤 Foto berhasil dikirim!");
+
+  } catch (err) {
+    tg.showAlert("❌ Error: " + err);
+    console.error(err);
+  }
 
     if (!response) return;
 
