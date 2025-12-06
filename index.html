@@ -84,31 +84,72 @@
 
     // Handle Absen
 document.getElementById("btnAbsen").addEventListener("click", async () => {
-  // tg.showAlert("📸 Mengambil foto...");
+  try {
+    //tg.showAlert("📸 Mengambil foto...");
 
-  // Render ke canvas
-  const canvas = document.createElement("canvas");
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+    // Render ke canvas
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
 
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    if (!canvas.width || !canvas.height) {
+      throw new Error("Canvas size kosong — video belum siap?");
+    }
 
-  const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.7));
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-  // Upload ke Apps Script
-  const form = new FormData();
-  form.append("photo", blob, "absen.jpg");
-  form.append("chat_id", tg.initDataUnsafe.user.id); // kirim chat id untuk bot
-  form.append("type", "absen");
+    const blob = await new Promise((resolve, reject) =>
+      canvas.toBlob(blob => blob ? resolve(blob) : reject("Gagal membuat blob"))
+    );
 
-  await fetch("https://script.google.com/macros/s/AKfycbzWz2uXM8NSSYIlsA8Qyxnu8BWWz2sQIQ2umUsqv0wlWnmJm13cB4Bydv22ctJXEknp/exec", {
-    method: "POST",
-    body: form
-  });
+    if (!blob) throw new Error("Blob hasil foto null!");
 
-  tg.showAlert("📤 Foto dikirim ke server!");
-  tg.close();
+    // Upload ke Apps Script
+    const form = new FormData();
+    form.append("photo", blob, "absen.jpg");
+    form.append("chat_id", tg.initDataUnsafe.user.id);
+    form.append("type", "absen");
+
+    const url = "https://script.google.com/macros/s/AKfycbzWz2uXM8NSSYIlsA8Qyxnu8BWWz2sQIQ2umUsqv0wlWnmJm13cB4Bydv22ctJXEknp/exec";
+
+    const result = await fetch(url, {
+      method: "POST",
+      body: form
+    });
+
+    if (!result.ok) {
+      throw new Error("Fetch gagal, status: " + result.status);
+    }
+
+    const text = await result.text();
+    console.log("Server response:", text);
+
+    tg.showAlert("📤 Foto dikirim ke server!\nResponse: " + text);
+    tg.close();
+
+  } catch (err) {
+    console.error("❌ ERROR:", err);
+
+    tg.showAlert("❌ ERROR: " + err.message || err.toString());
+
+    // kirim debug error ke bot (opsional)
+    try {
+      await fetch(
+        `https://api.telegram.org/bot8223994087:AAH6FWIVCu9FS7wP9QAjS1XypXCVlvs1aLc/sendMessage`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: tg.initDataUnsafe.user.id,
+            text: "❌ MiniApp Error:\n" + (err.message || err.toString())
+          })
+        }
+      );
+    } catch (e2) {
+      console.log("Tidak bisa kirim error ke bot:", e2);
+    }
+  }
 });
 
   </script>
