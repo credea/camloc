@@ -20,9 +20,13 @@
 
     // event klik tombol
     tg.MainButton.onClick(() => {
-      console.log("MainButton diklik!");
-      tg.sendData("test ok");
-      tg.showAlert("Tombol ditekan!");
+        try {
+          tg.sendData("OK");
+          tg.showAlert("✅ Data dikirim ke bot!");
+          infoEl.innerHTML += `<p style="color:green;">📤 Data terkirim</p>`;
+        } catch (error) {
+          tg.showAlert("❌ Error: " + error.message);
+        }
       setTimeout(() => tg.close(), 3000);
     });
     
