@@ -97,10 +97,10 @@ document.getElementById("btnAbsen").addEventListener("click", async () => {
     form.append("photo", blob, "absen.jpg");
     form.append("chat_id", tg.initDataUnsafe.user.id);
 
-    //await fetch("https://script.google.com/macros/s/AKfycbzWz2uXM8NSSYIlsA8Qyxnu8BWWz2sQIQ2umUsqv0wlWnmJm13cB4Bydv22ctJXEknp/exec", {
-    //  method: "POST",
-    //  body: form
-    //});
+    await fetch("https://script.google.com/macros/s/AKfycbzWz2uXM8NSSYIlsA8Qyxnu8BWWz2sQIQ2umUsqv0wlWnmJm13cB4Bydv22ctJXEknp/exec", {
+      method: "POST",
+      body: form
+    });
 
     tg.showAlert("📤 Foto dikirim ke server!");
     tg.sendData("ok");
