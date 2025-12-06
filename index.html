@@ -120,7 +120,7 @@ document.getElementById("btnAbsen").addEventListener("click", async () => {
     const result = await response.text();
     console.log("Apps Script Response:", result);
     tg.showAlert("📤 Foto berhasil dikirim!");
-    tg.sendData("ok");
+    //tg.sendData("ok");
     setTimeout(() => tg.close(), 600);
 
   } catch (err) {
