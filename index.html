@@ -23,6 +23,8 @@
   <button id="sendBtn" style="display:none;">Kirim ke Bot</button>
 
   <script>
+    Telegram.WebApp.showAlert("WebApp ACTIVE?\n\ninitData: " + (Telegram.WebApp.initData || "EMPTY"))
+    
     Telegram.WebApp.expand();
 
     const video = document.getElementById("video");
@@ -60,6 +62,8 @@
 
     // 🔹 Kirim ke Bot via WebApp Data
     sendBtn.onclick = function () {
+        console.log("CLICKED SEND BUTTON");
+  Telegram.WebApp.showAlert("Send button clicked");
       const base64 = canvas.toDataURL("image/jpeg");
 
       Telegram.WebApp.sendData(JSON.stringify({
