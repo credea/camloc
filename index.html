@@ -58,6 +58,7 @@
 
   <script>
     const tg = window.Telegram.WebApp;
+    tg.ready();
     tg.expand();
 
     const video = document.getElementById("video");
@@ -85,17 +86,18 @@
     document.getElementById("btnAbsen").addEventListener("click", () => { 
   try {
       const canvas = document.createElement("canvas"); 
-      canvas.width = video.videoWidth; canvas.height = video.videoHeight; 
-      const ctx = canvas.getContext("2d"); ctx.drawImage(video, 0, 0, canvas.width, canvas.height); 
+      canvas.width = video.videoWidth; 
+      canvas.height = video.videoHeight; 
+      const ctx = canvas.getContext("2d"); 
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height); 
       const imageData = canvas.toDataURL("image/jpeg", 0.8); 
       tg.sendData(JSON.stringify({ type: "absen", photo: imageData })); 
       status.innerText = "📤 Foto absensi dikirim ke bot..."; });
-   setTimeout(() => tg.close(), 1000);
+      setTimeout(() => tg.close(), 1000);
   } catch (err) {
     tg.showAlert("❌ ERROR: " + err.message || err.toString());
   }
 });
-
   </script>
 </body>
 </html>
