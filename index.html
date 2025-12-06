@@ -82,7 +82,7 @@
     
 document.getElementById("btnAbsen").addEventListener("click", async () => {
   try {
-    tg.showAlert("📸 Mengambil foto...");
+    status.innerText = "📸 Mengambil foto...";
 
     // Buat canvas
     const canvas = document.createElement("canvas");
@@ -100,7 +100,7 @@ document.getElementById("btnAbsen").addEventListener("click", async () => {
     // Konversi ke base64
     const base64 = canvas.toDataURL("image/jpeg", 0.8);
     
-    tg.showAlert("📤 Mengirim ke server...");
+    status.innerText = "📤 Mengirim ke server...";
 
     // POST ke Apps Script
     const response = await fetch(
