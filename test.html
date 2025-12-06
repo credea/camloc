@@ -23,10 +23,10 @@
         try {
           tg.sendData("OK");
           tg.showAlert("✅ Data dikirim ke bot!");
+          setTimeout(() => tg.close(), 3000);
         } catch (error) {
           tg.showAlert("❌ Error: " + error.message);
         }
-      setTimeout(() => tg.close(), 3000);
     });
     
   </script>
