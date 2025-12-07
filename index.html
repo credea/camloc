@@ -42,6 +42,11 @@
         margin-top: 0.5rem;
         font-size: 0.9rem;
       }
+
+      #location {
+        margin-top: 0.5rem;
+        font-size: 0.9rem;
+      }
     </style>
   </head>
 
@@ -50,6 +55,7 @@
 
     <video id="video" autoplay playsinline muted></video>
     <p id="status">⏳ Loading kamera...</p>
+    <p id="location"></p>
 
     <script>
       const tg = window.Telegram.WebApp;
@@ -58,6 +64,7 @@
 
       const video = document.getElementById("video");
       const status = document.getElementById("status");
+      const locText = document.getElementById("location");
 
       async function startCamera() {
         try {
@@ -78,7 +85,25 @@
       tg.MainButton.setText("✅ Absen");
       tg.MainButton.show();
 
-      tg.MainButton.onClick(() => {
+      function getLocation() {
+        return new Promise((resolve) => {
+          if (!navigator.geolocation) return resolve(null);
+
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              resolve({
+                lat: pos.coords.latitude,
+                lng: pos.coords.longitude,
+                accuracy: pos.coords.accuracy,
+              });
+            },
+            () => resolve(null),
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+          );
+        });
+      }
+
+      tg.MainButton.onClick(async () => {
         const canvas = document.createElement("canvas");
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
@@ -92,26 +117,40 @@
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const base64 = canvas.toDataURL("image/jpeg", 0.8);
 
+        status.innerText = "📤 Mengambil lokasi...";
+
+        // Ambil lokasi (WAJIB pakai await)
+        const location = await getLocation();
+
+        // Tampilkan lokasi di layar
+        if (location) {
+          locText.innerText = `📍 Lokasi: ${location.lat.toFixed(
+            5
+          )}, ${location.lng.toFixed(5)}`;
+        } else {
+          locText.innerText = "📍 Lokasi tidak tersedia";
+        }
+
         status.innerText = "📤 Mengirim ke server...";
 
-        // POST ke Apps Script
-        const params = new URLSearchParams(location.search);
+        // Ambil URL server dari query string
+        const params = new URLSearchParams(window.location.search);
         const SERVER_URL = params.get("server_url");
+
         fetch(SERVER_URL, {
           method: "POST",
           mode: "no-cors",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             chat_id: tg.initDataUnsafe.user.id,
             photo: base64,
+            location: location, // ⬅ lokasi terkirim
           }),
         });
 
-        tg.showAlert("📤 Foto sedang dikirim!");
+        tg.showAlert("📤 Foto & lokasi sedang dikirim!");
         setTimeout(() => tg.sendData("ok"), 3000);
-        setTimeout(() => tg.close(), 600);
+        setTimeout(() => tg.close(), 2000);
       });
     </script>
   </body>
