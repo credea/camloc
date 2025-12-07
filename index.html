@@ -111,8 +111,12 @@
       // -------------------------
       // GET LOCATION OTOMATIS SETELAH KAMERA AKTIF
       // -------------------------
+      const MIN_ACCURACY = 20; // Ambang akurasi minimal (meter)
+
+      // GET LOCATION OTOMATIS SAMPAI AKURAT
       async function getLocationBackground() {
         locText.innerText = "📍 Mengambil lokasi...";
+        tg.MainButton.hide(); // tombol disembunyikan dulu
 
         lastLocation = await getLocation();
 
@@ -125,12 +129,21 @@
         } else {
           locText.innerText = "📍 Lokasi tidak tersedia";
         }
+
+        // CEK AKURASI
+        if (lastLocation && lastLocation.accuracy <= MIN_ACCURACY) {
+          tg.MainButton.show();
+          return; // selesai
+        }
+
+        // Jika akurasi buruk → ambil ulang
+        locText.innerText += "\n⏳ Mencari lokasi lebih akurat...";
+        setTimeout(getLocationBackground, 1500); // coba lagi tiap 1.5 detik
       }
 
       // -------------------------
       // BUTTON ABSEN
       // -------------------------
-
       tg.MainButton.setText("✅ Absen");
       tg.MainButton.show();
 
@@ -171,8 +184,8 @@
         });
 
         tg.showAlert("📤 Foto & lokasi sedang dikirim...");
-        setTimeout(() => tg.sendData("ok"), 2000);
-        setTimeout(() => tg.close(), 2300);
+        setTimeout(() => tg.sendData("ok"), 3000);
+        setTimeout(() => tg.close(), 2000);
       });
     </script>
   </body>
