@@ -67,6 +67,9 @@
       const locText = document.getElementById("location");
 
       let lastLocation = null; // Lokasi realtime tersimpan di sini
+      let locationRetry = 0;
+      const MIN_ACCURACY = 25; // meter
+      const MAX_RETRY = 3;
 
       async function startCamera() {
         try {
@@ -111,10 +114,6 @@
       // -------------------------
       // GET LOCATION OTOMATIS SETELAH KAMERA AKTIF
       // -------------------------
-      const MIN_ACCURACY = 25; // Ambang akurasi minimal (meter)
-      const MAX_RETRY = 3;
-
-      // GET LOCATION OTOMATIS SAMPAI AKURAT
       async function getLocationBackground() {
         locText.innerText = "📍 Mengambil lokasi...";
         tg.MainButton.hide(); // tombol disembunyikan dulu
