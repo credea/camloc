@@ -56,7 +56,6 @@
     <video id="video" autoplay playsinline muted></video>
     <p id="status">⏳ Loading kamera...</p>
     <p id="location"></p>
-    <p id="debug" style="font-size:12px; color:#444; white-space:pre-line;"></p>
 
     <script>
       const tg = window.Telegram.WebApp;
@@ -71,11 +70,6 @@
       let locationRetry = 0;
       const MIN_ACCURACY = 25; // meter
       const MAX_RETRY = 3;
-
-      function debug(msg) {
-  const el = document.getElementById("debug");
-  el.innerText += msg + "\n";
-}
 
       async function startCamera() {
         try {
@@ -194,7 +188,7 @@
               return;
             }
 
-            debug("Blob created, size: " + blob.size + " bytes");
+            status.innerText = "Blob created, size: " + blob.size + " bytes";
 
             // Ambil server_url dari query param
             const params = new URLSearchParams(window.location.search);
@@ -205,14 +199,12 @@
             form.append("photo", blob, "absen.jpg");
             form.append("location", JSON.stringify(lastLocation));
 
-            debug("Sending fetch to: " + SERVER_URL);
+            status.innerText = "Sending fetch to: " + SERVER_URL;
             await fetch(SERVER_URL, {
               method: "POST",
               mode: "no-cors",
               body: form,
             })
-              .then(() => debug("Fetch sent"))
-              .catch(err => debug("Fetch ERROR: " + err));
 
             tg.showAlert("📤 Foto & lokasi dikirim!");
             setTimeout(() => tg.sendData("ok"), 3000);
