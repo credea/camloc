@@ -172,7 +172,7 @@
 
         const ctx = canvas.getContext("2d");
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const base64 = canvas.toDataURL("image/jpeg", 0.8);
+        //const base64 = canvas.toDataURL("image/jpeg", 0.8);
 
         status.innerText = "📤 Mengirim ke server...";
 
@@ -181,24 +181,34 @@
           lastLocation = await getLocation();
         }
 
-        // Ambil URL server dari query param
-        const params = new URLSearchParams(window.location.search);
-        const SERVER_URL = params.get("server_url");
+        canvas.toBlob(
+          async (blob) => {
+            if (!blob) {
+              tg.showAlert("❌ Kamera gagal membuat foto!");
+              return;
+            }
 
-        fetch(SERVER_URL, {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chat_id: tg.initDataUnsafe.user.id,
-            photo: base64,
-            location: lastLocation,
-          }),
-        });
+            // Ambil server_url dari query param
+            const params = new URLSearchParams(window.location.search);
+            const SERVER_URL = params.get("server_url");
 
-        tg.showAlert("📤 Foto & lokasi sedang dikirim...");
-        setTimeout(() => tg.sendData("ok"), 2000);
-        setTimeout(() => tg.close(), 2300);
+            const form = new FormData();
+            form.append("chat_id", tg.initDataUnsafe.user.id);
+            form.append("photo", blob, "absen.jpg");
+            form.append("location", JSON.stringify(lastLocation));
+
+            await fetch(SERVER_URL, {
+              method: "POST",
+              body: form,
+            });
+
+            tg.showAlert("📤 Foto & lokasi dikirim!");
+            setTimeout(() => tg.sendData("ok"), 500);
+            setTimeout(() => tg.close(), 1000);
+          },
+          "image/jpeg",
+          0.7
+        );
       });
     </script>
   </body>
