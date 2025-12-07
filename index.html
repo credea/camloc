@@ -66,6 +66,8 @@
       const status = document.getElementById("status");
       const locText = document.getElementById("location");
 
+      let lastLocation = null; // Lokasi realtime tersimpan di sini
+
       async function startCamera() {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({
@@ -75,6 +77,9 @@
           video.srcObject = stream;
           await video.play();
           status.innerText = "✅ Kamera aktif";
+
+          // Setelah kamera aktif → ambil lokasi awal
+          getLocationBackground();
         } catch (err) {
           status.innerText = "❌ Gagal akses kamera: " + err.message;
         }
@@ -82,9 +87,9 @@
 
       startCamera();
 
-      tg.MainButton.setText("✅ Absen");
-      tg.MainButton.show();
-
+      // -------------------------
+      // FUNGSI GET LOCATION
+      // -------------------------
       function getLocation() {
         return new Promise((resolve) => {
           if (!navigator.geolocation) return resolve(null);
@@ -103,6 +108,32 @@
         });
       }
 
+      // -------------------------
+      // GET LOCATION OTOMATIS SETELAH KAMERA AKTIF
+      // -------------------------
+      async function getLocationBackground() {
+        locText.innerText = "📍 Mengambil lokasi...";
+
+        lastLocation = await getLocation();
+
+        if (lastLocation) {
+          locText.innerText =
+            `📍 Lokasi: ${lastLocation.lat.toFixed(
+              5
+            )}, ${lastLocation.lng.toFixed(5)}` +
+            ` (±${lastLocation.accuracy}m)`;
+        } else {
+          locText.innerText = "📍 Lokasi tidak tersedia";
+        }
+      }
+
+      // -------------------------
+      // BUTTON ABSEN
+      // -------------------------
+
+      tg.MainButton.setText("✅ Absen");
+      tg.MainButton.show();
+
       tg.MainButton.onClick(async () => {
         const canvas = document.createElement("canvas");
         canvas.width = video.videoWidth;
@@ -117,23 +148,14 @@
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const base64 = canvas.toDataURL("image/jpeg", 0.8);
 
-        status.innerText = "📤 Mengambil lokasi...";
-
-        // Ambil lokasi (WAJIB pakai await)
-        const location = await getLocation();
-
-        // Tampilkan lokasi di layar
-        if (location) {
-          locText.innerText = `📍 Lokasi: ${location.lat.toFixed(
-            5
-          )}, ${location.lng.toFixed(5)}`;
-        } else {
-          locText.innerText = "📍 Lokasi tidak tersedia";
-        }
-
         status.innerText = "📤 Mengirim ke server...";
 
-        // Ambil URL server dari query string
+        // Jika lokasi belum tersedia → ambil ulang
+        if (!lastLocation) {
+          lastLocation = await getLocation();
+        }
+
+        // Ambil URL server dari query param
         const params = new URLSearchParams(window.location.search);
         const SERVER_URL = params.get("server_url");
 
@@ -144,13 +166,13 @@
           body: JSON.stringify({
             chat_id: tg.initDataUnsafe.user.id,
             photo: base64,
-            location: location, // ⬅ lokasi terkirim
+            location: lastLocation,
           }),
         });
 
-        tg.showAlert("📤 Foto & lokasi sedang dikirim!");
-        setTimeout(() => tg.sendData("ok"), 3000);
-        setTimeout(() => tg.close(), 2000);
+        tg.showAlert("📤 Foto & lokasi sedang dikirim...");
+        setTimeout(() => tg.sendData("ok"), 2000);
+        setTimeout(() => tg.close(), 2300);
       });
     </script>
   </body>
