@@ -111,7 +111,8 @@
       // -------------------------
       // GET LOCATION OTOMATIS SETELAH KAMERA AKTIF
       // -------------------------
-      const MIN_ACCURACY = 20; // Ambang akurasi minimal (meter)
+      const MIN_ACCURACY = 25; // Ambang akurasi minimal (meter)
+      const MAX_RETRY = 3;
 
       // GET LOCATION OTOMATIS SAMPAI AKURAT
       async function getLocationBackground() {
@@ -136,9 +137,19 @@
           return; // selesai
         }
 
-        // Jika akurasi buruk → ambil ulang
-        locText.innerText += "\n⏳ Mencari lokasi lebih akurat...";
-        setTimeout(getLocationBackground, 1500); // coba lagi tiap 1.5 detik
+        let locationRetry = 0;
+
+        // Jika akurasi buruk → cek apakah sudah 3x
+        if (locationRetry < MAX_RETRY) {
+          locationRetry++;
+          locText.innerText += `\n⏳ Mencari lokasi lebih akurat... (percobaan ${locationRetry})`;
+          setTimeout(getLocationBackground, 3000); // ulang lagi
+        } else {
+          // SUDAH 3x COBA, berhenti
+          locText.innerText +=
+            "\n⚠️ Lokasi tidak cukup akurat (maks 3 percobaan).";
+          tg.MainButton.show();
+        }
       }
 
       // -------------------------
@@ -184,8 +195,8 @@
         });
 
         tg.showAlert("📤 Foto & lokasi sedang dikirim...");
-        setTimeout(() => tg.sendData("ok"), 3000);
-        setTimeout(() => tg.close(), 2000);
+        setTimeout(() => tg.sendData("ok"), 2000);
+        setTimeout(() => tg.close(), 2300);
       });
     </script>
   </body>
