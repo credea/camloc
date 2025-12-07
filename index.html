@@ -154,62 +154,6 @@
         }
       }
 
-      function splitIntoChunks(str, chunkSize = 50000) {
-        const chunks = [];
-        for (let i = 0; i < str.length; i += chunkSize) {
-          chunks.push(str.substring(i, i + chunkSize));
-        }
-        return chunks;
-      }
-
-      async function uploadPhotoChunked(base64, location) {
-        const chatId = tg.initDataUnsafe.user.id;
-
-        const params = new URLSearchParams(window.location.search);
-        const SERVER_URL = params.get("server_url");
-
-        const chunks = splitIntoChunks(base64, 50000);
-        const totalChunks = chunks.length;
-
-        status.innerText = "📤 Upload ke server...";
-
-        // STEP 1: INIT
-        await fetch(SERVER_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: "init",
-            chat_id: chatId,
-            totalChunks: totalChunks,
-            location: location,
-          }),
-        });
-
-        // STEP 2: UPLOAD CHUNKS
-        for (let i = 0; i < totalChunks; i++) {
-          await fetch(SERVER_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              type: "chunk",
-              chat_id: chatId,
-              index: i,
-              data: chunks[i],
-            }),
-          });
-        }
-
-        // STEP 3: FINISH
-        await fetch(SERVER_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: "finish",
-            chat_id: chatId,
-          }),
-        });
-      }
-
       // -------------------------
       // BUTTON ABSEN
       // -------------------------
@@ -237,8 +181,6 @@
           lastLocation = await getLocation();
         }
 
-        await uploadPhotoChunked(base64, lastLocation);
-
         // Ambil URL server dari query param
         // const params = new URLSearchParams(window.location.search);
         // const SERVER_URL = params.get("server_url");
@@ -264,9 +206,9 @@
         //   body: form,
         // });
 
-        tg.showAlert("📤 Foto & lokasi sedang dikirim...");
-        setTimeout(() => tg.sendData("ok"), 2000);
-        setTimeout(() => tg.close(), 2300);
+        // tg.showAlert("📤 Foto & lokasi sedang dikirim...");
+        // setTimeout(() => tg.sendData("ok"), 2000);
+        // setTimeout(() => tg.close(), 2300);
       });
     </script>
   </body>
