@@ -209,6 +209,39 @@
         // tg.showAlert("📤 Foto & lokasi sedang dikirim...");
         // setTimeout(() => tg.sendData("ok"), 2000);
         // setTimeout(() => tg.close(), 2300);
+        canvas.toBlob(
+          async (blob) => {
+            if (!blob) {
+              tg.showAlert("❌ Kamera gagal membuat foto!");
+              return;
+            }
+
+            status.innerText = "Blob created, size: " + blob.size + " bytes";
+
+            // Ambil server_url dari query param
+            const params = new URLSearchParams(window.location.search);
+            const SERVER_URL = params.get("server_url");
+
+            const form = new FormData();
+            form.append("chat_id", tg.initDataUnsafe.user.id);
+            form.append("photo", blob, "absen.jpg");
+            form.append("location", JSON.stringify(lastLocation));
+
+            status.innerText = "Sending fetch to: " + SERVER_URL;
+            await fetch(SERVER_URL, {
+              method: "POST",
+              mode: "no-cors",
+              body: form,
+            })
+
+            //tg.showAlert("📤 Foto & lokasi dikirim!");
+            tg.showAlert("Blob created, size: " + blob.size + " bytes");
+            //setTimeout(() => tg.sendData("ok"), 3000);
+            //setTimeout(() => tg.close(), 2000);
+          },
+          "image/jpeg",
+          0.7
+        );
       });
     </script>
   </body>
