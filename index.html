@@ -171,6 +171,8 @@
         const chunks = splitIntoChunks(base64, 50000);
         const totalChunks = chunks.length;
 
+        status.innerText = "📤 Upload ke server...";
+
         // STEP 1: INIT
         await fetch(SERVER_URL, {
           method: "POST",
