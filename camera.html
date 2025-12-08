@@ -202,28 +202,53 @@
             const SERVER_URL = params.get("server_url");
 
             debug("Blob created, size: " + blob.size + " bytes");
+            debug("SERVER_URL: " + SERVER_URL); // CEK INI DULU
+
+            if (!SERVER_URL) {
+              debug("ERROR: SERVER_URL is null!");
+              tg.showAlert("❌ Server URL tidak ditemukan!");
+              return;
+            }
 
             const form = new FormData();
             form.append("chat_id", tg.initDataUnsafe.user.id);
             form.append("photo", blob, "absen.jpg");
             form.append("location", JSON.stringify(lastLocation));
 
-            debug("Fetch to: " + SERVER_URL);
-            
-            await fetch(SERVER_URL, {
-              method: "POST",
-              mode: "no-cors",
-              body: form,
-            })
-              .then(() => debug("Fetch sent"))
-              .catch((err) => debug("Fetch ERROR: " + err));
+            debug("FormData prepared");
+            debug("chat_id: " + tg.initDataUnsafe.user.id);
+            debug("location: " + JSON.stringify(lastLocation));
 
-            tg.showAlert("📤 Foto & lokasi dikirim!");
-            //setTimeout(() => tg.sendData("ok"), 3000);
-            //setTimeout(() => tg.close(), 2000);
+            try {
+              debug("Starting fetch to: " + SERVER_URL);
+
+              const response = await fetch(SERVER_URL, {
+                method: "POST",
+                // HAPUS mode: "no-cors" untuk bisa baca response
+                body: form,
+              });
+
+              debug("Fetch completed, status: " + response.status);
+
+              if (!response.ok) {
+                debug("Response NOT OK: " + response.status);
+                const text = await response.text();
+                debug("Response text: " + text);
+              } else {
+                debug("Response OK!");
+                const result = await response.text();
+                debug("Result: " + result);
+              }
+
+              tg.showAlert("📤 Foto & lokasi dikirim!");
+            } catch (err) {
+              debug("Fetch ERROR: " + err.message);
+              debug("Error stack: " + err.stack);
+              tg.showAlert("❌ Gagal kirim: " + err.message);
+            }
           },
           "image/jpeg",
-          0.7
+          0.6
         );
       });
     </script>
