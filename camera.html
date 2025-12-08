@@ -187,36 +187,46 @@
           lastLocation = await getLocation();
         }
 
-        canvas.toBlob(
-          async (blob) => {
-            if (!blob) {
-              tg.showAlert("❌ Kamera gagal membuat foto!");
-              return;
-            }
+        canvas.toBlob(async (blob) => {
+  if (!blob) {
+    tg.showAlert("❌ Foto gagal dibuat!");
+    return;
+  }
 
-            // Ambil server_url dari query
-            const params = new URLSearchParams(window.location.search);
-            const SERVER_URL = params.get("server_url");
+  const params = new URLSearchParams(window.location.search);
+  const SERVER_URL = params.get("server_url");
 
-            debug("Blob created, size: " + blob.size + " bytes");
+  const boundary = "----TGFormBoundary" + Date.now();
 
-            const form = new FormData();
-            form.append("chat_id", tg.initDataUnsafe.user.id);
-            form.append("photo", blob, "absen.jpg");
-            form.append("location", JSON.stringify(lastLocation));
+  // HEADER multipart:
+  let head =
+    `--${boundary}\r\n` +
+    `Content-Disposition: form-data; name="chat_id"\r\n\r\n` +
+    tg.initDataUnsafe.user.id + `\r\n` +
 
-            await fetch(SERVER_URL, {
-              method: "POST",
-              //mode: "no-cors",
-              body: form,
-            })
-            .then(() => debug("Fetch sent"))
-            .catch(err => debug("Fetch ERROR: " + err));
+    `--${boundary}\r\n` +
+    `Content-Disposition: form-data; name="location"\r\n\r\n` +
+    JSON.stringify(lastLocation) + `\r\n` +
 
-            tg.showAlert("📤 Foto & lokasi dikirim!");
-            //setTimeout(() => tg.sendData("ok"), 3000);
-            //setTimeout(() => tg.close(), 2000);
-          },
+    `--${boundary}\r\n` +
+    `Content-Disposition: form-data; name="photo"; filename="absen.jpg"\r\n` +
+    `Content-Type: image/jpeg\r\n\r\n`;
+
+  let tail = `\r\n--${boundary}--`;
+
+  // Gabungkan header + blob + footer:
+  const fullBody = new Blob(
+    [head, blob, tail],
+    { type: "multipart/form-data; boundary=" + boundary }
+  );
+
+  await fetch(SERVER_URL, {
+    method: "POST",
+    body: fullBody,
+  });
+
+  tg.showAlert("📤 Foto & lokasi dikirim!");
+}),
           "image/jpeg",
           0.7
         );
