@@ -239,24 +239,24 @@
             log('❌ CORS failed: ' + error.message, 'error');
             log('⚠️ Trying no-cors mode...', 'warning');
             
-            try {
-              await fetch(APPS_SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: formData
-              });
+            // try {
+            //   await fetch(APPS_SCRIPT_URL, {
+            //     method: 'POST',
+            //     mode: 'no-cors',
+            //     body: formData
+            //   });
 
-              const duration = Date.now() - startTime;
-              log(`✅ Sent with no-cors in ${duration}ms`, 'success');
-              log('⚠️ Cannot read response (no-cors limitation)', 'warning');
-              log('✅ Check Apps Script Executions to verify', 'info');
+            //   const duration = Date.now() - startTime;
+            //   log(`✅ Sent with no-cors in ${duration}ms`, 'success');
+            //   log('⚠️ Cannot read response (no-cors limitation)', 'warning');
+            //   log('✅ Check Apps Script Executions to verify', 'info');
               
-              tg.showAlert(`✅ ${label} sent (no-cors)! Check server logs`);
+            //   tg.showAlert(`✅ ${label} sent (no-cors)! Check server logs`);
 
-            } catch (e2) {
-              log('❌ no-cors also failed: ' + e2.message, 'error');
-              tg.showAlert('❌ Failed to send');
-            }
+            // } catch (e2) {
+            //   log('❌ no-cors also failed: ' + e2.message, 'error');
+            //   tg.showAlert('❌ Failed to send');
+            // }
           }
         };
         
