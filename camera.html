@@ -197,12 +197,13 @@
               return;
             }
 
+            debug("Blob created, size: " + blob.size + " bytes");
+
             // Ambil server_url dari query
             const params = new URLSearchParams(window.location.search);
             const SERVER_URL = params.get("server_url");
 
-            debug("Blob created, size: " + blob.size + " bytes");
-            debug("SERVER_URL: " + SERVER_URL); // CEK INI DULU
+            debug("SERVER_URL: " + SERVER_URL);
 
             if (!SERVER_URL) {
               debug("ERROR: SERVER_URL is null!");
@@ -210,21 +211,47 @@
               return;
             }
 
-            const form = new FormData();
-            form.append("chat_id", tg.initDataUnsafe.user.id);
-            form.append("photo", blob, "absen.jpg");
-            form.append("location", JSON.stringify(lastLocation));
+            // CEK TELEGRAM DATA DULU
+            debug("Checking Telegram data...");
+            debug("tg exists: " + (typeof tg !== "undefined"));
+            debug(
+              "tg.initDataUnsafe exists: " + (tg.initDataUnsafe ? "yes" : "no")
+            );
 
-            debug("FormData prepared");
-            debug("chat_id: " + tg.initDataUnsafe.user.id);
-            debug("location: " + JSON.stringify(lastLocation));
+            let chatId;
+            try {
+              chatId = tg.initDataUnsafe?.user?.id || "unknown";
+              debug("chat_id extracted: " + chatId);
+            } catch (e) {
+              debug("ERROR getting chat_id: " + e.message);
+              chatId = "error";
+            }
+
+            debug("Creating FormData...");
+            const form = new FormData();
+
+            try {
+              debug("Appending chat_id...");
+              form.append("chat_id", chatId);
+
+              debug("Appending photo...");
+              form.append("photo", blob, "absen.jpg");
+
+              debug("Appending location...");
+              form.append("location", JSON.stringify(lastLocation));
+
+              debug("FormData prepared successfully!");
+            } catch (e) {
+              debug("ERROR creating FormData: " + e.message);
+              tg.showAlert("❌ Error FormData: " + e.message);
+              return;
+            }
 
             try {
               debug("Starting fetch to: " + SERVER_URL);
 
               const response = await fetch(SERVER_URL, {
                 method: "POST",
-                // HAPUS mode: "no-cors" untuk bisa baca response
                 body: form,
               });
 
@@ -232,23 +259,18 @@
 
               if (!response.ok) {
                 debug("Response NOT OK: " + response.status);
-                const text = await response.text();
-                debug("Response text: " + text);
               } else {
                 debug("Response OK!");
-                const result = await response.text();
-                debug("Result: " + result);
               }
 
               tg.showAlert("📤 Foto & lokasi dikirim!");
             } catch (err) {
               debug("Fetch ERROR: " + err.message);
-              debug("Error stack: " + err.stack);
               tg.showAlert("❌ Gagal kirim: " + err.message);
             }
           },
           "image/jpeg",
-          0.6
+          0.5
         );
       });
     </script>
