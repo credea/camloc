@@ -188,6 +188,7 @@
           
           log(`✅ Base64 created: ${base64Length} chars (${base64KB} KB)`, 'success');
           // log(`Base64 preview: ${base64data.substring(0, 50)}...`, 'info');
+          log('ChatId: ' + tg.initDataUnsafe?.user?.id || 'unknown');
 
           // KIRIM SEBAGAI FORMDATA DENGAN BASE64 STRING
           const formData = new FormData();
