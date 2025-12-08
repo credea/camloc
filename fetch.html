@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script src="https://telegram.org/js/telegram-web-app.js?59"></script>
+  <title>Test Fetch to Apps Script</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h3 {
+      color: #333;
+    }
+    #log {
+      background: #fff;
+      border: 1px solid #ddd;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 8px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .log-item {
+      margin: 5px 0;
+      padding: 5px;
+      border-bottom: 1px solid #eee;
+    }
+    .log-success {
+      color: #28a745;
+    }
+    .log-error {
+      color: #dc3545;
+    }
+    .log-info {
+      color: #007bff;
+    }
+    button {
+      background: #0088cc;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:active {
+      background: #006699;
+    }
+  </style>
+</head>
+<body>
+  <h3>Test Fetch to Apps Script</h3>
+  
+  <button onclick="testFetchGET()">🔍 Test GET</button>
+  <button onclick="testFetchPOST()">📤 Test POST</button>
+  <button onclick="testFetchFormData()">📋 Test FormData</button>
+  <button onclick="clearLog()">🗑️ Clear Log</button>
+  
+  <div id="log"></div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+
+    // Ambil URL dari query parameter
+    const params = new URLSearchParams(window.location.search);
+    const APPS_SCRIPT_URL = params.get("server_url");
+
+    // Logger function
+    function log(message, type = 'info') {
+      const logDiv = document.getElementById('log');
+      const timestamp = new Date().toLocaleTimeString();
+      const logItem = document.createElement('div');
+      logItem.className = `log-item log-${type}`;
+      logItem.innerText = `[${timestamp}] ${message}`;
+      logDiv.appendChild(logItem);
+      logDiv.scrollTop = logDiv.scrollHeight;
+      console.log(message);
+    }
+
+    function clearLog() {
+      document.getElementById('log').innerHTML = '';
+      log('Log cleared', 'info');
+    }
+
+    // Test 1: GET Request
+    async function testFetchGET() {
+      log('🔍 Starting GET request...', 'info');
+      log('URL: ' + APPS_SCRIPT_URL, 'info');
+
+      try {
+        const startTime = Date.now();
+        
+        const response = await fetch(APPS_SCRIPT_URL + '?test=get&time=' + Date.now(), {
+          method: 'GET',
+        });
+
+        const duration = Date.now() - startTime;
+        log(`✅ Response received (${duration}ms)`, 'success');
+        log('Status: ' + response.status, 'info');
+        log('StatusText: ' + response.statusText, 'info');
+
+        const text = await response.text();
+        log('Response body: ' + text.substring(0, 200), 'success');
+
+        tg.showAlert('✅ GET Success!');
+
+      } catch (error) {
+        log('❌ GET Error: ' + error.message, 'error');
+        log('Error stack: ' + error.stack, 'error');
+        tg.showAlert('❌ GET Failed: ' + error.message);
+      }
+    }
+
+    // Test 2: POST with JSON
+    async function testFetchPOST() {
+      log('📤 Starting POST request...', 'info');
+      log('URL: ' + APPS_SCRIPT_URL, 'info');
+
+      try {
+        const startTime = Date.now();
+        
+        const payload = {
+          action: 'test',
+          message: 'Hello from WebApp',
+          timestamp: new Date().toISOString(),
+          user_id: tg.initDataUnsafe?.user?.id || 'unknown'
+        };
+
+        log('Payload: ' + JSON.stringify(payload), 'info');
+
+        const response = await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const duration = Date.now() - startTime;
+        log(`✅ Response received (${duration}ms)`, 'success');
+        log('Status: ' + response.status, 'info');
+
+        const text = await response.text();
+        log('Response body: ' + text.substring(0, 200), 'success');
+
+        // Try parse JSON
+        try {
+          const json = JSON.parse(text);
+          log('Parsed JSON: ' + JSON.stringify(json, null, 2), 'success');
+        } catch (e) {
+          log('Response is not JSON', 'info');
+        }
+
+        tg.showAlert('✅ POST Success!');
+
+      } catch (error) {
+        log('❌ POST Error: ' + error.message, 'error');
+        log('Error stack: ' + error.stack, 'error');
+        tg.showAlert('❌ POST Failed: ' + error.message);
+      }
+    }
+
+    // Test 3: POST with FormData
+    async function testFetchFormData() {
+      log('📋 Starting FormData POST...', 'info');
+      log('URL: ' + APPS_SCRIPT_URL, 'info');
+
+      try {
+        const startTime = Date.now();
+        
+        const formData = new FormData();
+        formData.append('action', 'test_formdata');
+        formData.append('user_id', tg.initDataUnsafe?.user?.id || 'unknown');
+        formData.append('timestamp', new Date().toISOString());
+        formData.append('test_text', 'Hello FormData');
+
+        log('FormData created with 4 fields', 'info');
+
+        // Test with mode: "no-cors" (Apps Script redirect issue)
+        log('Using mode: no-cors', 'info');
+        
+        const response = await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          body: formData
+        });
+
+        const duration = Date.now() - startTime;
+        log(`✅ Request sent (${duration}ms)`, 'success');
+        log('Mode no-cors: Cannot read response', 'info');
+        log('Check Apps Script logs to verify data received', 'info');
+
+        tg.showAlert('✅ FormData Sent! (no-cors mode)');
+
+      } catch (error) {
+        log('❌ FormData Error: ' + error.message, 'error');
+        log('Error stack: ' + error.stack, 'error');
+        tg.showAlert('❌ FormData Failed: ' + error.message);
+      }
+    }
+
+    // Initial log
+    log('🚀 Test page loaded', 'success');
+    log('Apps Script URL: ' + APPS_SCRIPT_URL, 'info');
+    log('User ID: ' + (tg.initDataUnsafe?.user?.id || 'unknown'), 'info');
+    log('Platform: ' + tg.platform, 'info');
+    log('Ready to test!', 'success');
+  </script>
+</body>
+</html>
