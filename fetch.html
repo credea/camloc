@@ -48,6 +48,7 @@
       font-size: 16px;
       cursor: pointer;
       margin: 5px;
+      width: calc(50% - 10px);
     }
     button:active {
       background: #006699;
@@ -58,8 +59,9 @@
   <h3>Test Fetch to Apps Script</h3>
   
   <button onclick="testFetchGET()">🔍 Test GET</button>
-  <button onclick="testFetchPOST()">📤 Test POST</button>
-  <button onclick="testFetchFormData()">📋 Test FormData</button>
+  <button onclick="testFetchPOSTFormData()">📤 Test POST (FormData)</button>
+  <button onclick="testFetchPOSTNoCors()">📤 Test POST (no-cors)</button>
+  <button onclick="testFetchPOSTWithFile()">📸 Test POST (with file)</button>
   <button onclick="clearLog()">🗑️ Clear Log</button>
   
   <div id="log"></div>
@@ -71,7 +73,7 @@
 
     // Ambil URL dari query parameter
     const params = new URLSearchParams(window.location.search);
-    const APPS_SCRIPT_URL = params.get("server_url");
+    const APPS_SCRIPT_URL = params.get("server_url") || "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec";
 
     // Logger function
     function log(message, type = 'info') {
@@ -108,40 +110,40 @@
         log('StatusText: ' + response.statusText, 'info');
 
         const text = await response.text();
-        log('Response body: ' + text.substring(0, 200), 'success');
+        log('Response length: ' + text.length + ' chars', 'info');
+        log('Response preview: ' + text.substring(0, 150), 'success');
 
         tg.showAlert('✅ GET Success!');
 
       } catch (error) {
         log('❌ GET Error: ' + error.message, 'error');
-        log('Error stack: ' + error.stack, 'error');
         tg.showAlert('❌ GET Failed: ' + error.message);
       }
     }
 
-    // Test 2: POST with JSON
-    async function testFetchPOST() {
-      log('📤 Starting POST request...', 'info');
+    // Test 2: POST with FormData (WORKING method for Apps Script)
+    async function testFetchPOSTFormData() {
+      log('📤 Starting POST with FormData...', 'info');
       log('URL: ' + APPS_SCRIPT_URL, 'info');
 
       try {
         const startTime = Date.now();
         
-        const payload = {
-          action: 'test',
-          message: 'Hello from WebApp',
-          timestamp: new Date().toISOString(),
-          user_id: tg.initDataUnsafe?.user?.id || 'unknown'
-        };
+        const formData = new FormData();
+        formData.append('action', 'test_post');
+        formData.append('message', 'Hello from FormData POST');
+        formData.append('timestamp', new Date().toISOString());
+        formData.append('user_id', tg.initDataUnsafe?.user?.id || 'unknown');
+        formData.append('platform', tg.platform);
 
-        log('Payload: ' + JSON.stringify(payload), 'info');
+        log('FormData created with 5 fields', 'info');
 
+        // Try WITHOUT no-cors first to see response
+        log('Attempting POST with CORS...', 'info');
+        
         const response = await fetch(APPS_SCRIPT_URL, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload)
+          body: formData
         });
 
         const duration = Date.now() - startTime;
@@ -149,45 +151,63 @@
         log('Status: ' + response.status, 'info');
 
         const text = await response.text();
-        log('Response body: ' + text.substring(0, 200), 'success');
+        log('Response: ' + text.substring(0, 200), 'success');
 
-        // Try parse JSON
         try {
           const json = JSON.parse(text);
-          log('Parsed JSON: ' + JSON.stringify(json, null, 2), 'success');
+          log('✅ Parsed JSON response:', 'success');
+          log(JSON.stringify(json, null, 2), 'success');
         } catch (e) {
           log('Response is not JSON', 'info');
         }
 
-        tg.showAlert('✅ POST Success!');
+        tg.showAlert('✅ POST FormData Success!');
 
       } catch (error) {
         log('❌ POST Error: ' + error.message, 'error');
-        log('Error stack: ' + error.stack, 'error');
-        tg.showAlert('❌ POST Failed: ' + error.message);
+        log('⚠️ CORS blocked! Trying no-cors mode...', 'info');
+        
+        // Fallback to no-cors
+        try {
+          const formData = new FormData();
+          formData.append('action', 'test_post');
+          formData.append('message', 'Hello from FormData POST (no-cors)');
+          formData.append('timestamp', new Date().toISOString());
+          formData.append('user_id', tg.initDataUnsafe?.user?.id || 'unknown');
+
+          await fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: formData
+          });
+
+          log('✅ Sent with no-cors mode', 'success');
+          log('⚠️ Cannot read response (no-cors limitation)', 'info');
+          tg.showAlert('✅ Sent! Check Apps Script logs');
+        } catch (e2) {
+          log('❌ no-cors also failed: ' + e2.message, 'error');
+          tg.showAlert('❌ All methods failed');
+        }
       }
     }
 
-    // Test 3: POST with FormData
-    async function testFetchFormData() {
-      log('📋 Starting FormData POST...', 'info');
+    // Test 3: POST with no-cors from start
+    async function testFetchPOSTNoCors() {
+      log('📤 Starting POST with no-cors mode...', 'info');
       log('URL: ' + APPS_SCRIPT_URL, 'info');
 
       try {
         const startTime = Date.now();
         
         const formData = new FormData();
-        formData.append('action', 'test_formdata');
-        formData.append('user_id', tg.initDataUnsafe?.user?.id || 'unknown');
+        formData.append('action', 'test_nocors');
+        formData.append('message', 'Testing no-cors mode');
         formData.append('timestamp', new Date().toISOString());
-        formData.append('test_text', 'Hello FormData');
+        formData.append('user_id', tg.initDataUnsafe?.user?.id || 'unknown');
 
-        log('FormData created with 4 fields', 'info');
+        log('Sending with mode: no-cors...', 'info');
 
-        // Test with mode: "no-cors" (Apps Script redirect issue)
-        log('Using mode: no-cors', 'info');
-        
-        const response = await fetch(APPS_SCRIPT_URL, {
+        await fetch(APPS_SCRIPT_URL, {
           method: 'POST',
           mode: 'no-cors',
           body: formData
@@ -195,15 +215,75 @@
 
         const duration = Date.now() - startTime;
         log(`✅ Request sent (${duration}ms)`, 'success');
-        log('Mode no-cors: Cannot read response', 'info');
-        log('Check Apps Script logs to verify data received', 'info');
+        log('⚠️ Response cannot be read (no-cors)', 'info');
+        log('✅ Check Apps Script Executions log to verify', 'info');
 
-        tg.showAlert('✅ FormData Sent! (no-cors mode)');
+        tg.showAlert('✅ Sent! Check server logs');
 
       } catch (error) {
-        log('❌ FormData Error: ' + error.message, 'error');
-        log('Error stack: ' + error.stack, 'error');
-        tg.showAlert('❌ FormData Failed: ' + error.message);
+        log('❌ Error: ' + error.message, 'error');
+        tg.showAlert('❌ Failed: ' + error.message);
+      }
+    }
+
+    // Test 4: POST with File (dummy image)
+    async function testFetchPOSTWithFile() {
+      log('📸 Creating dummy image...', 'info');
+
+      try {
+        // Create dummy canvas image
+        const canvas = document.createElement('canvas');
+        canvas.width = 200;
+        canvas.height = 200;
+        const ctx = canvas.getContext('2d');
+        
+        // Draw something
+        ctx.fillStyle = '#4CAF50';
+        ctx.fillRect(0, 0, 200, 200);
+        ctx.fillStyle = 'white';
+        ctx.font = '30px Arial';
+        ctx.fillText('TEST', 60, 110);
+
+        log('Canvas created', 'success');
+
+        canvas.toBlob(async (blob) => {
+          if (!blob) {
+            log('❌ Blob creation failed', 'error');
+            return;
+          }
+
+          log('✅ Blob created: ' + blob.size + ' bytes', 'success');
+
+          const formData = new FormData();
+          formData.append('action', 'test_file');
+          formData.append('user_id', tg.initDataUnsafe?.user?.id || 'unknown');
+          formData.append('timestamp', new Date().toISOString());
+          formData.append('photo', blob, 'test.jpg');
+
+          log('FormData with file ready', 'info');
+          log('Sending with no-cors...', 'info');
+
+          try {
+            await fetch(APPS_SCRIPT_URL, {
+              method: 'POST',
+              mode: 'no-cors',
+              body: formData
+            });
+
+            log('✅ File sent!', 'success');
+            log('Check Apps Script logs to see file data', 'info');
+            tg.showAlert('✅ File sent! Check logs');
+
+          } catch (error) {
+            log('❌ Send error: ' + error.message, 'error');
+            tg.showAlert('❌ Failed: ' + error.message);
+          }
+
+        }, 'image/jpeg', 0.8);
+
+      } catch (error) {
+        log('❌ Error: ' + error.message, 'error');
+        tg.showAlert('❌ Failed: ' + error.message);
       }
     }
 
@@ -212,6 +292,7 @@
     log('Apps Script URL: ' + APPS_SCRIPT_URL, 'info');
     log('User ID: ' + (tg.initDataUnsafe?.user?.id || 'unknown'), 'info');
     log('Platform: ' + tg.platform, 'info');
+    log('Version: Telegram WebApp ' + tg.version, 'info');
     log('Ready to test!', 'success');
   </script>
 </body>
