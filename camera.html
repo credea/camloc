@@ -181,7 +181,6 @@
 
         const ctx = canvas.getContext("2d");
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        //const base64 = canvas.toDataURL("image/jpeg", 0.8);
 
         status.innerText = "📤 Mengirim ke server...";
 
@@ -199,7 +198,7 @@
 
             const params = new URLSearchParams(window.location.search);
             const SERVER_URL = params.get("server_url");
-
+            debug("Blob created, size: " + blob.size + " bytes");
             const boundary = "----TGFormBoundary" + Date.now();
 
             // HEADER multipart:
@@ -226,7 +225,9 @@
             await fetch(SERVER_URL, {
               method: "POST",
               body: fullBody,
-            });
+            })
+              .then(() => debug("Fetch sent"))
+              .catch((err) => debug("Fetch ERROR: " + err));
 
             tg.showAlert("📤 Foto & lokasi dikirim!");
           },
