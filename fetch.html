@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <script src="https://telegram.org/js/telegram-web-app.js?59"></script>
-  <title>Test Fetch Large File</title>
+  <title>Test Fetch Large File (Base64)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -70,7 +70,7 @@
   </style>
 </head>
 <body>
-  <h3>Test Large File Upload</h3>
+  <h3>Test Large File Upload (Base64)</h3>
   
   <button onclick="testSmallFile()">📸 Small (~2KB)</button>
   <button onclick="testMediumFile()">📸 Medium (~10KB)</button>
@@ -123,7 +123,6 @@
       
       // Add complexity to increase file size
       if (complexity === 'high' || complexity === 'very_high') {
-        // Draw many circles (adds detail = larger file)
         for (let i = 0; i < 100; i++) {
           ctx.fillStyle = `rgba(${Math.random()*255}, ${Math.random()*255}, ${Math.random()*255}, 0.3)`;
           ctx.beginPath();
@@ -139,13 +138,12 @@
       }
       
       if (complexity === 'very_high') {
-        // Add noise pattern
         const imageData = ctx.getImageData(0, 0, width, height);
         for (let i = 0; i < imageData.data.length; i += 4) {
           const noise = Math.random() * 50 - 25;
-          imageData.data[i] += noise;     // R
-          imageData.data[i + 1] += noise; // G
-          imageData.data[i + 2] += noise; // B
+          imageData.data[i] += noise;
+          imageData.data[i + 1] += noise;
+          imageData.data[i + 2] += noise;
         }
         ctx.putImageData(imageData, 0, 0);
       }
@@ -177,71 +175,97 @@
         const sizeKB = (blob.size / 1024).toFixed(2);
         log(`✅ Blob created: ${blob.size} bytes (${sizeKB} KB)`, 'success');
 
-        const formData = new FormData();
-        formData.append('action', 'test_file_size');
-        formData.append('label', label);
-        formData.append('size_bytes', blob.size);
-        formData.append('size_kb', sizeKB);
-        formData.append('user_id', tg.initDataUnsafe?.user?.id || 'unknown');
-        formData.append('timestamp', new Date().toISOString());
-        formData.append('photo', blob, `${label}.jpg`);
-
-        log(`Sending ${sizeKB}KB file to server...`, 'info');
-        log('URL: ' + APPS_SCRIPT_URL, 'info');
-
-        const startTime = Date.now();
-
-        try {
-          // Try with CORS first
-          log('Attempting with CORS...', 'info');
+        // CONVERT BLOB TO BASE64
+        log('Converting blob to base64...', 'info');
+        
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        
+        reader.onloadend = async function() {
+          const base64data = reader.result;
+          const base64Length = base64data.length;
+          const base64KB = (base64Length / 1024).toFixed(2);
           
-          const response = await fetch(APPS_SCRIPT_URL, {
-            method: 'POST',
-            body: formData
-          });
+          log(`✅ Base64 created: ${base64Length} chars (${base64KB} KB)`, 'success');
+          log(`Base64 preview: ${base64data.substring(0, 50)}...`, 'info');
 
-          const duration = Date.now() - startTime;
-          log(`✅ Response received in ${duration}ms`, 'success');
-          log('Status: ' + response.status, 'info');
+          // KIRIM SEBAGAI FORMDATA DENGAN BASE64 STRING
+          const formData = new FormData();
+          formData.append('action', 'test_file_size');
+          formData.append('label', label);
+          formData.append('size_bytes', blob.size);
+          formData.append('size_kb', sizeKB);
+          formData.append('base64_length', base64Length);
+          formData.append('user_id', tg.initDataUnsafe?.user?.id || 'unknown');
+          formData.append('timestamp', new Date().toISOString());
+          formData.append('photo_base64', base64data); // ← BASE64 STRING
 
-          const text = await response.text();
-          log('Response: ' + text.substring(0, 200), 'success');
+          log(`Sending ${sizeKB}KB (${base64KB}KB base64) to server...`, 'info');
+          log('URL: ' + APPS_SCRIPT_URL, 'info');
+
+          const startTime = Date.now();
 
           try {
-            const json = JSON.parse(text);
-            log('✅ Server confirmed receipt:', 'success');
-            log(JSON.stringify(json, null, 2), 'success');
-          } catch (e) {
-            log('Response preview: ' + text.substring(0, 100), 'info');
-          }
-
-          tg.showAlert(`✅ ${label} sent! (${sizeKB}KB)`);
-
-        } catch (error) {
-          log('❌ CORS failed: ' + error.message, 'error');
-          log('⚠️ Trying no-cors mode...', 'warning');
-          
-          try {
-            await fetch(APPS_SCRIPT_URL, {
+            // Try with CORS first
+            log('Attempting with CORS...', 'info');
+            
+            const response = await fetch(APPS_SCRIPT_URL, {
               method: 'POST',
-              mode: 'no-cors',
               body: formData
             });
 
             const duration = Date.now() - startTime;
-            log(`✅ Sent with no-cors in ${duration}ms`, 'success');
-            log('⚠️ Cannot read response (no-cors limitation)', 'warning');
-            log('✅ Check Apps Script Executions to verify', 'info');
+            log(`✅ Response received in ${duration}ms`, 'success');
+            log('Status: ' + response.status, 'info');
+
+            const text = await response.text();
+            log('Response length: ' + text.length, 'info');
+
+            try {
+              const json = JSON.parse(text);
+              log('✅ Server response:', 'success');
+              log(JSON.stringify(json, null, 2), 'success');
+              
+              if (json.photo_received) {
+                log('✅✅✅ PHOTO RECEIVED BY SERVER!', 'success');
+              }
+            } catch (e) {
+              log('Response preview: ' + text.substring(0, 200), 'info');
+            }
+
+            tg.showAlert(`✅ ${label} sent! (${sizeKB}KB)`);
+
+          } catch (error) {
+            log('❌ CORS failed: ' + error.message, 'error');
+            log('⚠️ Trying no-cors mode...', 'warning');
             
-            tg.showAlert(`✅ ${label} sent (no-cors)! Check server logs`);
+            try {
+              await fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: formData
+              });
 
-          } catch (e2) {
-            log('❌ no-cors also failed: ' + e2.message, 'error');
-            tg.showAlert('❌ Failed to send');
+              const duration = Date.now() - startTime;
+              log(`✅ Sent with no-cors in ${duration}ms`, 'success');
+              log('⚠️ Cannot read response (no-cors limitation)', 'warning');
+              log('✅ Check Apps Script Executions to verify', 'info');
+              
+              tg.showAlert(`✅ ${label} sent (no-cors)! Check server logs`);
+
+            } catch (e2) {
+              log('❌ no-cors also failed: ' + e2.message, 'error');
+              tg.showAlert('❌ Failed to send');
+            }
           }
-        }
+        };
+        
+        reader.onerror = function(error) {
+          log('❌ FileReader error: ' + error, 'error');
+          tg.showAlert('❌ Failed to convert to base64');
+        };
 
-      }, 'image/jpeg', 0.9); // High quality for larger file
+      }, 'image/jpeg', 0.9);
     }
 
     // Test functions
@@ -270,11 +294,12 @@
     }
 
     // Initial log
-    log('🚀 Large File Test Ready', 'success');
+    log('🚀 Large File Test Ready (Base64 method)', 'success');
     log('Apps Script URL: ' + APPS_SCRIPT_URL, 'info');
     log('User ID: ' + (tg.initDataUnsafe?.user?.id || 'unknown'), 'info');
     log('Platform: ' + tg.platform, 'info');
-    log('Ready to test different file sizes!', 'success');
+    log('Method: Blob → Base64 → FormData', 'info');
+    log('Ready to test!', 'success');
   </script>
 </body>
 </html>
