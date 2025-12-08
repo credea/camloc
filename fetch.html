@@ -187,7 +187,7 @@
           const base64KB = (base64Length / 1024).toFixed(2);
           
           log(`✅ Base64 created: ${base64Length} chars (${base64KB} KB)`, 'success');
-          log(`Base64 preview: ${base64data.substring(0, 50)}...`, 'info');
+          // log(`Base64 preview: ${base64data.substring(0, 50)}...`, 'info');
 
           // KIRIM SEBAGAI FORMDATA DENGAN BASE64 STRING
           const formData = new FormData();
@@ -201,7 +201,7 @@
           formData.append('photo_base64', base64data); // ← BASE64 STRING
 
           log(`Sending ${sizeKB}KB (${base64KB}KB base64) to server...`, 'info');
-          log('URL: ' + APPS_SCRIPT_URL, 'info');
+          // log('URL: ' + APPS_SCRIPT_URL, 'info');
 
           const startTime = Date.now();
 
