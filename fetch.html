@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <script src="https://telegram.org/js/telegram-web-app.js?59"></script>
-  <title>Test Fetch to Apps Script</title>
+  <title>Test Fetch Large File</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -32,12 +32,17 @@
     }
     .log-success {
       color: #28a745;
+      font-weight: bold;
     }
     .log-error {
       color: #dc3545;
+      font-weight: bold;
     }
     .log-info {
       color: #007bff;
+    }
+    .log-warning {
+      color: #ff9800;
     }
     button {
       background: #0088cc;
@@ -53,17 +58,27 @@
     button:active {
       background: #006699;
     }
+    #preview {
+      margin-top: 10px;
+      text-align: center;
+    }
+    #preview canvas {
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      max-width: 100%;
+    }
   </style>
 </head>
 <body>
-  <h3>Test Fetch to Apps Script</h3>
+  <h3>Test Large File Upload</h3>
   
-  <button onclick="testFetchGET()">🔍 Test GET</button>
-  <button onclick="testFetchPOSTFormData()">📤 Test POST (FormData)</button>
-  <button onclick="testFetchPOSTNoCors()">📤 Test POST (no-cors)</button>
-  <button onclick="testFetchPOSTWithFile()">📸 Test POST (with file)</button>
+  <button onclick="testSmallFile()">📸 Small (~2KB)</button>
+  <button onclick="testMediumFile()">📸 Medium (~10KB)</button>
+  <button onclick="testLargeFile()">📸 Large (~50KB)</button>
+  <button onclick="testXLFile()">📸 X-Large (~100KB)</button>
   <button onclick="clearLog()">🗑️ Clear Log</button>
   
+  <div id="preview"></div>
   <div id="log"></div>
 
   <script>
@@ -71,11 +86,9 @@
     tg.ready();
     tg.expand();
 
-    // Ambil URL dari query parameter
     const params = new URLSearchParams(window.location.search);
     const APPS_SCRIPT_URL = params.get("server_url") || "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec";
 
-    // Logger function
     function log(message, type = 'info') {
       const logDiv = document.getElementById('log');
       const timestamp = new Date().toLocaleTimeString();
@@ -89,180 +102,125 @@
 
     function clearLog() {
       document.getElementById('log').innerHTML = '';
+      document.getElementById('preview').innerHTML = '';
       log('Log cleared', 'info');
     }
 
-    // Test 1: GET Request
-    async function testFetchGET() {
-      log('🔍 Starting GET request...', 'info');
-      log('URL: ' + APPS_SCRIPT_URL, 'info');
-
-      try {
-        const startTime = Date.now();
-        
-        const response = await fetch(APPS_SCRIPT_URL + '?test=get&time=' + Date.now(), {
-          method: 'GET',
-        });
-
-        const duration = Date.now() - startTime;
-        log(`✅ Response received (${duration}ms)`, 'success');
-        log('Status: ' + response.status, 'info');
-        log('StatusText: ' + response.statusText, 'info');
-
-        const text = await response.text();
-        log('Response length: ' + text.length + ' chars', 'info');
-        log('Response preview: ' + text.substring(0, 150), 'success');
-
-        tg.showAlert('✅ GET Success!');
-
-      } catch (error) {
-        log('❌ GET Error: ' + error.message, 'error');
-        tg.showAlert('❌ GET Failed: ' + error.message);
+    // Generate complex image
+    function createComplexImage(width, height, complexity = 'medium') {
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      
+      // Background gradient
+      const gradient = ctx.createLinearGradient(0, 0, width, height);
+      gradient.addColorStop(0, '#4CAF50');
+      gradient.addColorStop(0.5, '#2196F3');
+      gradient.addColorStop(1, '#9C27B0');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+      
+      // Add complexity to increase file size
+      if (complexity === 'high' || complexity === 'very_high') {
+        // Draw many circles (adds detail = larger file)
+        for (let i = 0; i < 100; i++) {
+          ctx.fillStyle = `rgba(${Math.random()*255}, ${Math.random()*255}, ${Math.random()*255}, 0.3)`;
+          ctx.beginPath();
+          ctx.arc(
+            Math.random() * width,
+            Math.random() * height,
+            Math.random() * 30 + 10,
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
+        }
       }
+      
+      if (complexity === 'very_high') {
+        // Add noise pattern
+        const imageData = ctx.getImageData(0, 0, width, height);
+        for (let i = 0; i < imageData.data.length; i += 4) {
+          const noise = Math.random() * 50 - 25;
+          imageData.data[i] += noise;     // R
+          imageData.data[i + 1] += noise; // G
+          imageData.data[i + 2] += noise; // B
+        }
+        ctx.putImageData(imageData, 0, 0);
+      }
+      
+      // Text overlay
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 40px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('TEST IMAGE', width/2, height/2);
+      ctx.font = '20px Arial';
+      ctx.fillText(`${width}x${height}`, width/2, height/2 + 40);
+      
+      return canvas;
     }
 
-    // Test 2: POST with FormData (WORKING method for Apps Script)
-    async function testFetchPOSTFormData() {
-      log('📤 Starting POST with FormData...', 'info');
-      log('URL: ' + APPS_SCRIPT_URL, 'info');
-
-      try {
-        const startTime = Date.now();
-        
-        const formData = new FormData();
-        formData.append('action', 'test_post');
-        formData.append('message', 'Hello from FormData POST');
-        formData.append('timestamp', new Date().toISOString());
-        formData.append('user_id', tg.initDataUnsafe?.user?.id || 'unknown');
-        formData.append('platform', tg.platform);
-
-        log('FormData created with 5 fields', 'info');
-
-        // Try WITHOUT no-cors first to see response
-        log('Attempting POST with CORS...', 'info');
-        
-        const response = await fetch(APPS_SCRIPT_URL, {
-          method: 'POST',
-          body: formData
-        });
-
-        const duration = Date.now() - startTime;
-        log(`✅ Response received (${duration}ms)`, 'success');
-        log('Status: ' + response.status, 'info');
-
-        const text = await response.text();
-        log('Response: ' + text.substring(0, 200), 'success');
-
-        try {
-          const json = JSON.parse(text);
-          log('✅ Parsed JSON response:', 'success');
-          log(JSON.stringify(json, null, 2), 'success');
-        } catch (e) {
-          log('Response is not JSON', 'info');
+    async function sendImage(canvas, label) {
+      const preview = document.getElementById('preview');
+      preview.innerHTML = '<h4>Preview:</h4>';
+      preview.appendChild(canvas);
+      
+      log(`Creating blob for ${label}...`, 'info');
+      
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          log('❌ Blob creation failed', 'error');
+          return;
         }
 
-        tg.showAlert('✅ POST FormData Success!');
+        const sizeKB = (blob.size / 1024).toFixed(2);
+        log(`✅ Blob created: ${blob.size} bytes (${sizeKB} KB)`, 'success');
 
-      } catch (error) {
-        log('❌ POST Error: ' + error.message, 'error');
-        log('⚠️ CORS blocked! Trying no-cors mode...', 'info');
-        
-        // Fallback to no-cors
+        const formData = new FormData();
+        formData.append('action', 'test_file_size');
+        formData.append('label', label);
+        formData.append('size_bytes', blob.size);
+        formData.append('size_kb', sizeKB);
+        formData.append('user_id', tg.initDataUnsafe?.user?.id || 'unknown');
+        formData.append('timestamp', new Date().toISOString());
+        formData.append('photo', blob, `${label}.jpg`);
+
+        log(`Sending ${sizeKB}KB file to server...`, 'info');
+        log('URL: ' + APPS_SCRIPT_URL, 'info');
+
+        const startTime = Date.now();
+
         try {
-          const formData = new FormData();
-          formData.append('action', 'test_post');
-          formData.append('message', 'Hello from FormData POST (no-cors)');
-          formData.append('timestamp', new Date().toISOString());
-          formData.append('user_id', tg.initDataUnsafe?.user?.id || 'unknown');
-
-          await fetch(APPS_SCRIPT_URL, {
+          // Try with CORS first
+          log('Attempting with CORS...', 'info');
+          
+          const response = await fetch(APPS_SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors',
             body: formData
           });
 
-          log('✅ Sent with no-cors mode', 'success');
-          log('⚠️ Cannot read response (no-cors limitation)', 'info');
-          tg.showAlert('✅ Sent! Check Apps Script logs');
-        } catch (e2) {
-          log('❌ no-cors also failed: ' + e2.message, 'error');
-          tg.showAlert('❌ All methods failed');
-        }
-      }
-    }
+          const duration = Date.now() - startTime;
+          log(`✅ Response received in ${duration}ms`, 'success');
+          log('Status: ' + response.status, 'info');
 
-    // Test 3: POST with no-cors from start
-    async function testFetchPOSTNoCors() {
-      log('📤 Starting POST with no-cors mode...', 'info');
-      log('URL: ' + APPS_SCRIPT_URL, 'info');
+          const text = await response.text();
+          log('Response: ' + text.substring(0, 200), 'success');
 
-      try {
-        const startTime = Date.now();
-        
-        const formData = new FormData();
-        formData.append('action', 'test_nocors');
-        formData.append('message', 'Testing no-cors mode');
-        formData.append('timestamp', new Date().toISOString());
-        formData.append('user_id', tg.initDataUnsafe?.user?.id || 'unknown');
-
-        log('Sending with mode: no-cors...', 'info');
-
-        await fetch(APPS_SCRIPT_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          body: formData
-        });
-
-        const duration = Date.now() - startTime;
-        log(`✅ Request sent (${duration}ms)`, 'success');
-        log('⚠️ Response cannot be read (no-cors)', 'info');
-        log('✅ Check Apps Script Executions log to verify', 'info');
-
-        tg.showAlert('✅ Sent! Check server logs');
-
-      } catch (error) {
-        log('❌ Error: ' + error.message, 'error');
-        tg.showAlert('❌ Failed: ' + error.message);
-      }
-    }
-
-    // Test 4: POST with File (dummy image)
-    async function testFetchPOSTWithFile() {
-      log('📸 Creating dummy image...', 'info');
-
-      try {
-        // Create dummy canvas image
-        const canvas = document.createElement('canvas');
-        canvas.width = 200;
-        canvas.height = 200;
-        const ctx = canvas.getContext('2d');
-        
-        // Draw something
-        ctx.fillStyle = '#4CAF50';
-        ctx.fillRect(0, 0, 200, 200);
-        ctx.fillStyle = 'white';
-        ctx.font = '30px Arial';
-        ctx.fillText('TEST', 60, 110);
-
-        log('Canvas created', 'success');
-
-        canvas.toBlob(async (blob) => {
-          if (!blob) {
-            log('❌ Blob creation failed', 'error');
-            return;
+          try {
+            const json = JSON.parse(text);
+            log('✅ Server confirmed receipt:', 'success');
+            log(JSON.stringify(json, null, 2), 'success');
+          } catch (e) {
+            log('Response preview: ' + text.substring(0, 100), 'info');
           }
 
-          log('✅ Blob created: ' + blob.size + ' bytes', 'success');
+          tg.showAlert(`✅ ${label} sent! (${sizeKB}KB)`);
 
-          const formData = new FormData();
-          formData.append('action', 'test_file');
-          formData.append('user_id', tg.initDataUnsafe?.user?.id || 'unknown');
-          formData.append('timestamp', new Date().toISOString());
-          formData.append('photo', blob, 'test.jpg');
-
-          log('FormData with file ready', 'info');
-          log('Sending with no-cors...', 'info');
-
+        } catch (error) {
+          log('❌ CORS failed: ' + error.message, 'error');
+          log('⚠️ Trying no-cors mode...', 'warning');
+          
           try {
             await fetch(APPS_SCRIPT_URL, {
               method: 'POST',
@@ -270,30 +228,53 @@
               body: formData
             });
 
-            log('✅ File sent!', 'success');
-            log('Check Apps Script logs to see file data', 'info');
-            tg.showAlert('✅ File sent! Check logs');
+            const duration = Date.now() - startTime;
+            log(`✅ Sent with no-cors in ${duration}ms`, 'success');
+            log('⚠️ Cannot read response (no-cors limitation)', 'warning');
+            log('✅ Check Apps Script Executions to verify', 'info');
+            
+            tg.showAlert(`✅ ${label} sent (no-cors)! Check server logs`);
 
-          } catch (error) {
-            log('❌ Send error: ' + error.message, 'error');
-            tg.showAlert('❌ Failed: ' + error.message);
+          } catch (e2) {
+            log('❌ no-cors also failed: ' + e2.message, 'error');
+            tg.showAlert('❌ Failed to send');
           }
+        }
 
-        }, 'image/jpeg', 0.8);
+      }, 'image/jpeg', 0.9); // High quality for larger file
+    }
 
-      } catch (error) {
-        log('❌ Error: ' + error.message, 'error');
-        tg.showAlert('❌ Failed: ' + error.message);
-      }
+    // Test functions
+    async function testSmallFile() {
+      log('=== Testing SMALL file (~2KB) ===', 'info');
+      const canvas = createComplexImage(200, 200, 'low');
+      await sendImage(canvas, 'small_2kb');
+    }
+
+    async function testMediumFile() {
+      log('=== Testing MEDIUM file (~10KB) ===', 'info');
+      const canvas = createComplexImage(400, 400, 'medium');
+      await sendImage(canvas, 'medium_10kb');
+    }
+
+    async function testLargeFile() {
+      log('=== Testing LARGE file (~50KB) ===', 'info');
+      const canvas = createComplexImage(800, 600, 'high');
+      await sendImage(canvas, 'large_50kb');
+    }
+
+    async function testXLFile() {
+      log('=== Testing X-LARGE file (~100KB) ===', 'info');
+      const canvas = createComplexImage(1200, 900, 'very_high');
+      await sendImage(canvas, 'xlarge_100kb');
     }
 
     // Initial log
-    log('🚀 Test page loaded', 'success');
+    log('🚀 Large File Test Ready', 'success');
     log('Apps Script URL: ' + APPS_SCRIPT_URL, 'info');
     log('User ID: ' + (tg.initDataUnsafe?.user?.id || 'unknown'), 'info');
     log('Platform: ' + tg.platform, 'info');
-    log('Version: Telegram WebApp ' + tg.version, 'info');
-    log('Ready to test!', 'success');
+    log('Ready to test different file sizes!', 'success');
   </script>
 </body>
 </html>
