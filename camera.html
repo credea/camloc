@@ -206,22 +206,22 @@
             debug("SERVER_URL: " + SERVER_URL);
 
             if (!SERVER_URL) {
-              debug("ERROR: SERVER_URL is null!");
               tg.showAlert("❌ Server URL tidak ditemukan!");
               return;
             }
 
-            // CEK TELEGRAM DATA DULU
-            debug("Checking Telegram data...");
-            debug("tg exists: " + (typeof tg !== "undefined"));
-            debug(
-              "tg.initDataUnsafe exists: " + (tg.initDataUnsafe ? "yes" : "no")
-            );
+            // Cek lastLocation
+            debug("lastLocation: " + JSON.stringify(lastLocation));
+
+            if (!lastLocation || lastLocation === null) {
+              tg.showAlert("⚠️ Lokasi belum didapat, coba lagi!");
+              return;
+            }
 
             let chatId;
             try {
               chatId = tg.initDataUnsafe?.user?.id || "unknown";
-              debug("chat_id extracted: " + chatId);
+              debug("chat_id: " + chatId);
             } catch (e) {
               debug("ERROR getting chat_id: " + e.message);
               chatId = "error";
@@ -231,42 +231,54 @@
             const form = new FormData();
 
             try {
-              debug("Appending chat_id...");
               form.append("chat_id", chatId);
 
-              debug("Appending photo...");
-              form.append("photo", blob, "absen.jpg");
+              // PENTING: Convert blob to base64 untuk Google Apps Script
+              const reader = new FileReader();
+              reader.readAsDataURL(blob);
 
-              debug("Appending location...");
-              form.append("location", JSON.stringify(lastLocation));
+              reader.onloadend = async function () {
+                const base64data = reader.result;
+                debug(
+                  "Photo converted to base64, length: " + base64data.length
+                );
 
-              debug("FormData prepared successfully!");
+                // Kirim sebagai base64 string, bukan blob
+                form.append("photo", base64data);
+                form.append("location", JSON.stringify(lastLocation));
+                form.append("latitude", lastLocation.latitude);
+                form.append("longitude", lastLocation.longitude);
+
+                debug("FormData prepared with base64 photo");
+
+                try {
+                  debug("Starting fetch...");
+
+                  // Google Apps Script perlu mode: "no-cors" karena redirect
+                  const response = await fetch(SERVER_URL, {
+                    method: "POST",
+                    mode: "no-cors", // HARUS ada untuk Google Apps Script
+                    body: form,
+                  });
+
+                  debug("Fetch sent (no-cors mode)");
+                  tg.showAlert("📤 Foto & lokasi dikirim!");
+
+                  // Optional: close after success
+                  // setTimeout(() => tg.close(), 2000);
+                } catch (err) {
+                  debug("Fetch ERROR: " + err.message);
+                  tg.showAlert("❌ Gagal kirim: " + err.message);
+                }
+              };
+
+              reader.onerror = function (error) {
+                debug("FileReader ERROR: " + error);
+                tg.showAlert("❌ Gagal convert foto!");
+              };
             } catch (e) {
-              debug("ERROR creating FormData: " + e.message);
-              tg.showAlert("❌ Error FormData: " + e.message);
-              return;
-            }
-
-            try {
-              debug("Starting fetch to: " + SERVER_URL);
-
-              const response = await fetch(SERVER_URL, {
-                method: "POST",
-                body: form,
-              });
-
-              debug("Fetch completed, status: " + response.status);
-
-              if (!response.ok) {
-                debug("Response NOT OK: " + response.status);
-              } else {
-                debug("Response OK!");
-              }
-
-              tg.showAlert("📤 Foto & lokasi dikirim!");
-            } catch (err) {
-              debug("Fetch ERROR: " + err.message);
-              tg.showAlert("❌ Gagal kirim: " + err.message);
+              debug("ERROR: " + e.message);
+              tg.showAlert("❌ Error: " + e.message);
             }
           },
           "image/jpeg",
