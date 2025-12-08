@@ -208,6 +208,8 @@
             form.append("photo", blob, "absen.jpg");
             form.append("location", JSON.stringify(lastLocation));
 
+            debug("Fetch to: " + SERVER_URL);
+            
             await fetch(SERVER_URL, {
               method: "POST",
               mode: "no-cors",
