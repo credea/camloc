@@ -214,6 +214,7 @@
               formData.append("size_bytes", blob.size);
               formData.append("size_kb", sizeKB);
               formData.append("base64_length", base64Length);
+              formData.append("location", JSON.stringify(lastLocation));
               formData.append("user_id", USER_ID_FROM_URL);
               formData.append("timestamp", new Date().toISOString());
               formData.append("photo_base64", base64data); // ← BASE64 STRING
