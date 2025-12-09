@@ -157,8 +157,7 @@
           setTimeout(getLocationBackground, 3000); // ulang lagi
         } else {
           // SUDAH 3x COBA, berhenti
-          locText.innerText +=
-            "\n⚠️ Lokasi tidak cukup akurat (maks 3x).";
+          locText.innerText += "\n⚠️ Lokasi tidak cukup akurat (maks 3x).";
           tg.MainButton.show();
         }
       }
@@ -218,8 +217,6 @@
               formData.append("user_id", USER_ID_FROM_URL);
               formData.append("timestamp", new Date().toISOString());
               formData.append("photo_base64", base64data); // ← BASE64 STRING
-
-              const startTime = Date.now();
 
               try {
                 await fetch(APPS_SCRIPT_URL, {
