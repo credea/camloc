@@ -153,7 +153,7 @@
         // Jika akurasi buruk → cek apakah sudah 3x
         if (locationRetry < MAX_RETRY) {
           locationRetry++;
-          locText.innerText += `\n⏳ Mencari lokasi lebih akurat... (percobaan ${locationRetry})`;
+          locText.innerText += `\n⏳ Mencari lokasi lebih akurat... (${locationRetry})`;
           setTimeout(getLocationBackground, 3000); // ulang lagi
         } else {
           // SUDAH 3x COBA, berhenti
