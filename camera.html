@@ -235,6 +235,10 @@
             reader.onerror = function (error) {
               tg.showAlert("❌ Failed to convert to base64");
             };
+
+            tg.showAlert("📤 Foto & lokasi dikirim!");
+            setTimeout(() => tg.sendData("ok"), 3000);
+            setTimeout(() => tg.close(), 2000);
           },
           "image/jpeg",
           0.9
