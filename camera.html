@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <script src="https://telegram.org/js/telegram-web-app.js?59"></script>
-    <title>Absensi Kamera</title>
+    <title>Camera Submitted</title>
 
     <style>
       body {
@@ -22,44 +22,26 @@
         background: #000;
       }
 
-      button {
-        display: block;
-        margin: 1rem auto;
-        padding: 0.8rem 1.2rem;
-        font-size: 1.2rem;
-        border: none;
-        border-radius: 8px;
-        background: #28a745;
-        color: white;
-        cursor: pointer;
-      }
-
-      button:active {
-        background: #218838;
-      }
-
-      #status {
+      #status, #location {
         margin-top: 0.5rem;
         font-size: 0.9rem;
       }
 
-      #location {
-        margin-top: 0.5rem;
-        font-size: 0.9rem;
+      #debug {
+        font-size: 12px;
+        color: #444;
+        white-space: pre-line;
       }
     </style>
   </head>
 
   <body>
-    <h3>📷 Absensi dengan Foto</h3>
+    <h3>📷 Look Camera</h3>
 
     <video id="video" autoplay playsinline muted></video>
-    <p id="status">⏳ Loading kamera...</p>
+    <p id="status">⏳ Initializing camera...</p>
     <p id="location"></p>
-    <p
-      id="debug"
-      style="font-size: 12px; color: #444; white-space: pre-line"
-    ></p>
+    <p id="debug"></p>
 
     <script>
       const tg = window.Telegram.WebApp;
@@ -72,7 +54,7 @@
 
       let lastLocation = null;
       let locationRetry = 0;
-      const MIN_ACCURACY = 25; // meter
+      const MIN_ACCURACY = 25; // meters
       const MAX_RETRY = 3;
 
       function debug(msg) {
@@ -80,6 +62,9 @@
         el.innerText += msg + "\n";
       }
 
+      // -------------------------
+      // START CAMERA
+      // -------------------------
       async function startCamera() {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({
@@ -88,19 +73,21 @@
 
           video.srcObject = stream;
           await video.play();
-          status.innerText = "✅ Kamera aktif";
 
-          // Setelah kamera aktif → ambil lokasi awal
+          status.innerText = "✅ Camera is active";
+
+          // Start background location lookup
           setTimeout(() => getLocationBackground(), 500);
         } catch (err) {
-          status.innerText = "❌ Gagal akses kamera: " + err.message;
+          status.innerText =
+            "❌ Unable to access camera: " + err.message;
         }
       }
 
       startCamera();
 
       // -------------------------
-      // FUNGSI GET LOCATION
+      // GET LOCATION
       // -------------------------
       function getLocation() {
         return new Promise((resolve) => {
@@ -116,9 +103,9 @@
             },
             (err) => {
               tg.showAlert(
-                "⚠️ Aktifkan lokasi untuk Telegram.\nError: " + err.message
+                "⚠️ Please enable location access.\nError: " + err.message
               );
-              resolve(null); // jangan menghentikan program, tetap lanjut
+              resolve(null);
             },
             { enableHighAccuracy: true, timeout: 5000, maximumAge: 3000 }
           );
@@ -126,46 +113,43 @@
       }
 
       // -------------------------
-      // GET LOCATION OTOMATIS SETELAH KAMERA AKTIF
+      // AUTO-LOCATION BACKGROUND
       // -------------------------
       async function getLocationBackground() {
-        locText.innerText = "📍 Mengambil lokasi...";
-        tg.MainButton.hide(); // tombol disembunyikan dulu
+        locText.innerText = "📍 Fetching location...";
+        tg.MainButton.hide();
 
         lastLocation = await getLocation();
 
         if (lastLocation) {
           locText.innerText =
-            `📍 Lokasi: ${lastLocation.lat.toFixed(
-              5
-            )}, ${lastLocation.lng.toFixed(5)}` +
-            ` (±${lastLocation.accuracy}m)`;
+            `📍 Location: ${lastLocation.lat.toFixed(5)}, ${lastLocation.lng.toFixed(5)}` +
+            ` (±${lastLocation.accuracy.toFixed(2)}m)`;
         } else {
-          locText.innerText = "📍 Lokasi tidak tersedia";
+          locText.innerText = "📍 Location unavailable";
         }
 
-        // CEK AKURASI
+        // GOOD ACCURACY
         if (lastLocation && lastLocation.accuracy <= MIN_ACCURACY) {
           tg.MainButton.show();
-          return; // selesai
+          return;
         }
 
-        // Jika akurasi buruk → cek apakah sudah 3x
+        // RETRY
         if (locationRetry < MAX_RETRY) {
           locationRetry++;
-          locText.innerText += `\n⏳ Mencari lokasi lebih akurat... (${locationRetry})`;
-          setTimeout(getLocationBackground, 3000); // ulang lagi
+          locText.innerText += `\n⏳ Improving accuracy... (${locationRetry})`;
+          setTimeout(getLocationBackground, 3000);
         } else {
-          // SUDAH 3x COBA, berhenti
-          locText.innerText += "\n⚠️ Lokasi tidak cukup akurat (maks 3x).";
+          locText.innerText += "\n⚠️ Location accuracy still low.";
           tg.MainButton.show();
         }
       }
 
       // -------------------------
-      // BUTTON ABSEN
+      // MAIN BUTTON
       // -------------------------
-      tg.MainButton.setText("✅ Absen");
+      tg.MainButton.setText("✅ Capture/Submit");
       tg.MainButton.show();
 
       tg.MainButton.onClick(async () => {
@@ -174,49 +158,39 @@
         canvas.height = video.videoHeight;
 
         if (!canvas.width || !canvas.height) {
-          tg.showAlert("❌ Video belum siap!");
+          tg.showAlert("❌ Camera not ready yet!");
           return;
         }
 
         const ctx = canvas.getContext("2d");
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        status.innerText = "📤 Mengirim ke server...";
+        status.innerText = "📤 Submitting...";
 
-        // Jika lokasi belum tersedia → ambil ulang
+        // Ensure we have location
         if (!lastLocation) {
           lastLocation = await getLocation();
         }
 
         canvas.toBlob(
           async (blob) => {
-            if (!blob) {
-              return;
-            }
+            if (!blob) return;
 
             const params = new URLSearchParams(window.location.search);
             const APPS_SCRIPT_URL = params.get("server_url");
             const USER_ID_FROM_URL = params.get("chat_id");
-
-            const sizeKB = (blob.size / 1024).toFixed(2);
 
             const reader = new FileReader();
             reader.readAsDataURL(blob);
 
             reader.onloadend = async function () {
               const base64data = reader.result;
-              const base64Length = base64data.length;
-              const base64KB = (base64Length / 1024).toFixed(2);
 
-              // KIRIM SEBAGAI FORMDATA DENGAN BASE64 STRING
               const formData = new FormData();
-              formData.append("size_bytes", blob.size);
-              formData.append("size_kb", sizeKB);
-              formData.append("base64_length", base64Length);
+              formData.append("photo_base64", base64data);
               formData.append("location", JSON.stringify(lastLocation));
               formData.append("user_id", USER_ID_FROM_URL);
               formData.append("timestamp", new Date().toISOString());
-              formData.append("photo_base64", base64data); // ← BASE64 STRING
 
               try {
                 await fetch(APPS_SCRIPT_URL, {
@@ -224,18 +198,14 @@
                   mode: "no-cors",
                   body: formData,
                 });
-                tg.showAlert(`✅ sent (no-cors)! Check server logs`);
+                tg.showAlert("✅ Submitted!");
               } catch (e) {
-                tg.showAlert("❌ Failed to send");
+                tg.showAlert("❌ Failed to submit");
               }
             };
-            reader.onerror = function (error) {
-              tg.showAlert("❌ Failed to convert to base64");
-            };
 
-            setTimeout(() => tg.showAlert("📤 Foto & lokasi dikirim!"), 1500);
-            setTimeout(() => tg.sendData("ok"), 2500);
-            setTimeout(() => tg.close(), 1000);
+            setTimeout(() => tg.sendData("ok"), 2000);
+            setTimeout(() => tg.close(), 1200);
           },
           "image/jpeg",
           0.9
