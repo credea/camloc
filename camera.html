@@ -236,9 +236,9 @@
               tg.showAlert("❌ Failed to convert to base64");
             };
 
-            tg.showAlert("📤 Foto & lokasi dikirim!");
-            setTimeout(() => tg.sendData("ok"), 3000);
-            setTimeout(() => tg.close(), 2000);
+            setTimeout(() => tg.showAlert("📤 Foto & lokasi dikirim!"), 1500);
+            setTimeout(() => tg.sendData("ok"), 2500);
+            setTimeout(() => tg.close(), 1000);
           },
           "image/jpeg",
           0.9
