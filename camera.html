@@ -194,6 +194,11 @@
             if (!blob) {
               return;
             }
+
+            const params = new URLSearchParams(window.location.search);
+            const APPS_SCRIPT_URL = params.get("server_url");
+            const USER_ID_FROM_URL = params.get("user_id");
+
             const sizeKB = (blob.size / 1024).toFixed(2);
 
             const reader = new FileReader();
@@ -209,10 +214,7 @@
               formData.append("size_bytes", blob.size);
               formData.append("size_kb", sizeKB);
               formData.append("base64_length", base64Length);
-              formData.append(
-                "user_id",
-                tg.initDataUnsafe?.user?.id || "unknown"
-              );
+              formData.append("user_id", USER_ID_FROM_URL);
               formData.append("timestamp", new Date().toISOString());
               formData.append("photo_base64", base64data); // ← BASE64 STRING
 
